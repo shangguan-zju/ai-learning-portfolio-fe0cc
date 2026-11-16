@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作业六 · 医学图提示词工程 × 四代生成模型对比</title>
+<style>
+  :root{
+    --bg1:#c9c6c3;--bg2:#b8b5b2;--ink:#3a3735;--muted:#7d7875;
+    --glass:linear-gradient(155deg,rgba(255,255,255,.66),rgba(255,255,255,.36));
+    --brd:rgba(255,255,255,.72);--shadow:0 20px 46px -26px rgba(70,64,60,.6);--radius:26px;
+    --line:#e5e1dd;
+    --amber:#b45309;--amber-bg:#fffbeb;--amber-soft:#fef3c7;--amber-line:#f59e0b;
+    --rose:#be123c;--rose-bg:#fff1f2;--rose-soft:#ffe4e6;--rose-line:#fb7185;
+    --blue:#1d4ed8;--blue-bg:#eff6ff;--blue-soft:#dbeafe;--blue-line:#60a5fa;
+    --green:#047857;--green-bg:#ecfdf5;--green-soft:#d1fae5;--green-line:#34d399;
+    --navy:#101d32;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+    color:var(--ink);min-height:100vh;padding:56px 20px 64px;-webkit-font-smoothing:antialiased;
+    background:
+      radial-gradient(900px 520px at 8% -6%, rgba(255,255,255,.8), transparent 62%),
+      radial-gradient(760px 480px at 96% 108%, rgba(255,255,255,.62), transparent 58%),
+      linear-gradient(160deg,var(--bg1),var(--bg2));
+    background-attachment:fixed;line-height:1.7;
+  }
+  .page{width:min(1120px,100%);margin:0 auto}
+  .hero{text-align:center;padding:10px 0 40px}
+  .eyebrow{font-size:12px;letter-spacing:.28em;color:var(--muted);text-transform:uppercase}
+  .hero h1{font-size:clamp(28px,5vw,46px);font-weight:800;margin:12px 0 14px;letter-spacing:.02em;
+    background:linear-gradient(180deg,#4b4643,#8b847f);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero .lead{font-size:14px;line-height:2;color:var(--muted);max-width:680px;margin:0 auto}
+  .chips{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:20px}
+  .chips span{font-size:11.5px;padding:7px 15px;border-radius:99px;color:#6b6460;background:rgba(255,255,255,.5);
+    border:1px solid var(--brd);backdrop-filter:blur(8px)}
+  .chips .d{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px}
+  .d.gmm{background:var(--amber-line)}.d.gan{background:var(--rose-line)}
+  .d.vae{background:var(--blue-line)}.d.ddpm{background:var(--green-line)}
+  .back{display:inline-flex;align-items:center;gap:6px;margin-bottom:26px;font-size:12px;font-weight:600;
+    color:#6b6460;text-decoration:none;padding:8px 16px;border-radius:99px;background:rgba(255,255,255,.5);
+    border:1px solid var(--brd)}
+  .back:hover{color:#3a3735}
+  .section{margin-top:22px;padding:28px;border-radius:var(--radius);background:var(--glass);
+    border:1px solid var(--brd);box-shadow:var(--shadow);
+    backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%)}
+  .shead{display:flex;gap:14px;align-items:flex-start;margin-bottom:18px}
+  .snum{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;flex:0 0 38px;
+    border-radius:12px;background:var(--navy);color:#fff;font-size:12px;font-weight:800;letter-spacing:.08em}
+  .section h2{font-size:20px;font-weight:800;letter-spacing:-.01em}
+  .ssub{margin-top:4px;color:var(--muted);font-size:12.5px}
+  .duo{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  figure{margin:0;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:#fff}
+  figure img{display:block;width:100%;height:auto}
+  figcaption{padding:12px 16px;font-size:12px;color:var(--muted);background:#faf9f8;border-top:1px solid var(--line)}
+  figcaption b{color:#4b4643;font-size:12.5px}
+  .img-fallback{display:none;padding:40px 20px;text-align:center;color:var(--muted);font-size:13px}
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:14px;overflow:hidden}
+  .twrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:#fff}
+  thead th{padding:12px 15px;background:var(--navy);color:#dce6f4;font-size:11.5px;letter-spacing:.04em;
+    text-align:left;white-space:nowrap}
+  tbody td{padding:14px 15px;border-bottom:1px solid var(--line);color:#4a4642;font-size:13px;vertical-align:top}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:nth-child(even){background:#fbfaf9}
+  .stage th:nth-child(1){width:150px}.stage th:nth-child(2){width:26%}.stage th:nth-child(3){width:34%}
+  .stage td:first-child{font-weight:800;white-space:nowrap}
+  .pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:10.5px;font-weight:700}
+  .p1{color:#065f46;background:#d1fae5}.p2{color:#9f1239;background:#ffe4e6}
+  .p3{color:#92400e;background:#fef3c7}.p4{color:#7c2d12;background:#fde8d7}
+  .prompt-box{position:relative;margin-top:14px;border:1px solid var(--line);border-radius:14px;background:#fff;overflow:hidden}
+  .prompt-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+    padding:11px 16px;background:#f6f5f4;border-bottom:1px solid var(--line)}
+  .prompt-head b{font-size:12.5px;letter-spacing:.05em;color:#4b4643}
+  .copy{border:1px solid var(--brd);border-radius:99px;background:linear-gradient(155deg,rgba(255,255,255,.9),rgba(255,255,255,.6));
+    color:#4b4643;font-size:11.5px;font-weight:700;padding:7px 15px;cursor:pointer}
+  .copy:active{transform:scale(.96)}
+  .prompt-box pre{margin:0;padding:18px;white-space:pre-wrap;word-break:break-word;
+    font-family:inherit;font-size:12.8px;line-height:1.9;color:#413d3a}
+  .neg{margin-top:14px;padding:14px 16px;border:1px dashed #e0b4a8;border-radius:12px;background:#fdf7f5}
+  .neg b{font-size:12px;color:#a04a32}
+  .neg p{margin-top:5px;font-size:12.5px;color:#7a5c50;line-height:1.8}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+  .mini{border:1px solid var(--line);border-radius:14px;background:#fff;padding:15px 17px}
+  .mini h3{font-size:13px;margin-bottom:7px}
+  .mini p{font-size:12.3px;color:#5d5854;line-height:1.8}
+  .keep{border-left:4px solid var(--green-line)}
+  .shift{border-left:4px solid var(--rose-line)}
+  .badge{display:inline-block;min-width:56px;text-align:center;padding:3px 10px;border-radius:7px;color:#fff;
+    font-size:12px;font-weight:800;letter-spacing:.05em}
+  .b-gmm{background:var(--amber)}.b-gan{background:var(--rose)}.b-vae{background:var(--blue)}.b-ddpm{background:var(--green)}
+  .era{margin-top:7px;color:#8a8580;font-size:11px}
+  .tagpill{display:inline-block;margin-top:8px;padding:2px 8px;border-radius:99px;font-size:10.5px;font-weight:700}
+  .t-gmm{color:var(--amber);background:var(--amber-soft)}.t-gan{color:var(--rose);background:var(--rose-soft)}
+  .t-vae{color:var(--blue);background:var(--blue-soft)}.t-ddpm{color:var(--green);background:var(--green-soft)}
+  .why{color:var(--rose);font-weight:800}.why.ok{color:var(--green)}
+  .main th:nth-child(1){width:150px}.main th:nth-child(2){width:22%}.main th:nth-child(3){width:24%}
+  .main th:nth-child(4){width:20%}.main th:nth-child(5){width:24%}
+  .main td:first-child{border-left:5px solid transparent;background:#fff}
+  .main tr.r1 td:first-child{border-left-color:var(--amber-line);background:var(--amber-bg)}
+  .main tr.r2 td:first-child{border-left-color:var(--rose-line);background:var(--rose-bg)}
+  .main tr.r3 td:first-child{border-left-color:var(--blue-line);background:var(--blue-bg)}
+  .main tr.r4 td:first-child{border-left-color:var(--green-line);background:var(--green-bg)}
+  .axis td{text-align:center}
+  .axis thead th.h1{background:var(--amber)}.axis thead th.h2{background:var(--rose)}
+  .axis thead th.h3{background:var(--blue)}.axis thead th.h4{background:var(--green)}
+  .axis tbody th{background:#faf9f8;font-weight:800;color:#57524e;text-align:left;border-bottom:1px solid var(--line);
+    padding:12px 14px;font-size:12px}
+  .close{margin-top:22px;padding:24px 26px;border-radius:20px;color:#eaf2fb;
+    background:radial-gradient(circle at 90% 20%,rgba(52,211,153,.18),transparent 30%),linear-gradient(120deg,#101d32,#0d2930)}
+  .close p{font-size:16px;font-weight:600;line-height:1.9}
+  .close .c1{color:#fcd34d;font-weight:800}.close .c2{color:#fda4af;font-weight:800}
+  .close .c3{color:#93c5fd;font-weight:800}.close .c4{color:#6ee7b7;font-weight:800}
+  .foot{text-align:center;margin-top:26px;font-size:11.5px;color:var(--muted);letter-spacing:.08em;line-height:2}
+  .toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(20px);opacity:0;
+    background:#3a3735;color:#fff;font-size:12.5px;padding:10px 20px;border-radius:99px;pointer-events:none;
+    transition:.35s;z-index:9}
+  .toast.show{opacity:1;transform:translateX(-50%)}
+  @media(max-width:820px){
+    body{padding:36px 14px 52px}
+    .section{padding:20px 16px}
+    .grid2,.duo{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <a class="back" href="index.html">← 返回我的学习成果</a>
+
+  <header class="hero">
+    <p class="eyebrow">2026 · AI 课程作品集 · 作业六</p>
+    <h1>医学示意图提示词工程<br>× 四代生成模型对比</h1>
+    <p class="lead">以「疲劳应力导致膝关节骨质增生」病理图为例：反推完整图像提示词 → 用生成模型实测出图 →
+      对照原稿与生成稿 → 用 GMM / GAN / VAE / DDPM 四代范式解释「模型为什么会这样画」。</p>
+    <div class="chips">
+      <span>🖼 提示词工程</span>
+      <span>🦵 医学信息图</span>
+      <span>🔍 原稿 vs 生成稿</span>
+      <span><i class="d gmm"></i>GMM</span>
+      <span><i class="d gan"></i>GAN</span>
+      <span><i class="d vae"></i>VAE</span>
+      <span><i class="d ddpm"></i>DDPM</span>
+    </div>
+  </header>
+
+  <section class="section">
+    <div class="shead">
+      <span class="snum">01</span>
+      <div>
+        <h2>原稿 vs 生成稿对照</h2>
+        <p class="ssub">左边是参考原图（四阶段过程叙事），右边是用提示词在生成模型中实测的成果（单幅结构特写）。</p>
+      </div>
+    </div>
+    <div class="duo">
+      <figure>
+        <img src="knee-osteophyte-mechanism-fig1.png" alt="原图：疲劳应力导致膝关节骨质增生的病理过程"
+          onerror="this.style.display='none';document.getElementById('fb1').style.display='block'">
+        <div class="img-fallback" id="fb1">📷 原图 knee-osteophyte-mechanism-fig1.png 未找到，请放入同一文件夹。</div>
+        <figcaption><b>参考原稿</b> · 横版四联画：正常关节 → 疲劳负荷 → 微损伤修复 → 骨赘形成，四阶段过程叙事</figcaption>
+      </figure>
+      <figure>
+        <img src="运动康复骨质增生_论文配图.png" alt="AI生成：疲劳性骨质增生与运动康复"
+          onerror="this.style.display='none';document.getElementById('fb2').style.display='block'">
+        <div class="img-fallback" id="fb2">📷 生成稿 运动康复骨质增生_论文配图.png 未找到，请放入同一文件夹。</div>
+        <figcaption><b>AI 生成稿</b> · 竖版单幅：膝关节剖面特写 + 三处中文标注 + 病程层次盘 + 运动康复元素</figcaption>
+      </figure>
+    </div>
+    <div class="twrap" style="margin-top:16px">
+      <table class="stage">
+        <thead><tr><th>对比维度</th><th>参考原稿</th><th>AI 生成稿</th><th>说明了什么</th></tr></thead>
+        <tbody>
+          <tr><td>构图版式</td><td>横版 4:3 · 四联面板 + 箭头串联</td><td>竖版 3:4 · 单幅特写</td><td>扩散模型面对「多面板+长指令」常主动简化为单主体构图</td></tr>
+          <tr><td>叙事方式</td><td>时间轴过程叙事（四步因果链）</td><td>空间轴结构叙事（一张剖面讲清现状）</td><td>生成模型擅长「画一个瞬间」，弱于「画一个过程」</td></tr>
+          <tr><td>文字渲染</td><td>大标题+面板标题+多条长句标注</td><td>大标题清晰，短标注（关节软骨/骨赘/关节间隙）准确</td><td>短中文词渲染已可用，长句仍易变形——这是逐像素去噪的天然难点</td></tr>
+          <tr><td>风格还原</td><td>手绘水彩 · 奶油色系 · 医学图谱</td><td>高度一致，另加方格纸底纹与橙青对比</td><td>风格词是提示词中还原度最高的部分</td></tr>
+          <tr><td>新增元素</td><td>—</td><td>左侧四层椭圆病程盘、右下跑步人物</td><td>模型会「脑补」语义相关的装饰元素，是惊喜也是失控点</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shead">
+      <span class="snum">02</span>
+      <div>
+        <h2>完整图像提示词（可直接复制）</h2>
+        <p class="ssub">提示词 A 复刻原稿四联画；提示词 B 反推自生成稿单幅风格。按「类型 → 主体 → 构图 → 文字 → 风格 → 质量词」六段式撰写。</p>
+      </div>
+    </div>
+
+    <div class="prompt-box">
+      <div class="prompt-head"><b>🇨🇳 提示词 A · 四联画复刻版（适配即梦 / 通义万相 / GPT-4o）</b>
+        <button class="copy" data-t="p-a">复制提示词</button></div>
+      <pre id="p-a">医学教科书风格科普信息图，横向四联画构图，4:3 横版，主题为「疲劳应力导致膝关节骨质增生的病理过程」。米白色纸质背景带轻微肌理，四个等宽圆角竖版面板从左到右排列，面板之间用灰色粗箭头依次连接，页面顶部居中深灰色大标题「疲劳应力导致膝关节骨质增生的病理过程」，标题下有一小段横线装饰。
+
+面板一：墨绿色圆形序号①，标题「正常膝关节」；手绘水彩质感膝关节解剖图，股骨髁、关节软骨、关节间隙、胫骨平台以细引线标注中文，软骨淡青色、骨组织米黄色；面板底部灰色小字「软骨完整，关节间隙正常」。
+
+面板二：深红色圆形序号②，标题「反复疲劳性负荷」；深灰色跑步运动员剪影呈蹬地冲刺姿态，膝与踝关节周围有多层红色圆弧冲击波纹，地面溅起红色速度线；面板底部红色加粗小字「跑跳、急停、变向产生反复冲击负荷」。
+
+面板三：橙色圆形序号③，标题「微损伤与修复反应」；膝关节剖面特写，淡青色软骨表面出现黑色裂纹并标注「软骨退变裂纹」，软骨下骨内见紫褐色微骨折线与红色点状病灶并标注「软骨下骨微骨折」，病灶周围散布橙色成骨细胞小点并标注「成骨细胞活跃」；面板底部橙色小字「反复微损伤触发修复性成骨反应」。
+
+面板四：棕色圆形序号④，标题「骨赘形成（骨质增生）」；膝关节边缘长出黄褐色不规则骨赘凸起并标注「骨赘（骨刺）」，关节间隙明显变窄并标注「关节间隙变窄」，软骨面粗糙缺损并标注「软骨磨损」；面板底部棕色小字「修复性成骨过度，形成骨赘」。
+
+页面底部一条浅色长横条，内写流程文字「长期疲劳性负荷 → 微损伤积累 → 修复性成骨 → 骨质增生」。整体风格：医学图谱手绘插画，柔和奶油色系，扁平2D带轻微纸面肌理，排版工整对称，中文无衬线字体，标注文字清晰可读，高清细节。</pre>
+    </div>
+
+    <div class="prompt-box">
+      <div class="prompt-head"><b>🇬🇧 Prompt A · English（适配 Midjourney / Stable Diffusion）</b>
+        <button class="copy" data-t="p-en">Copy Prompt</button></div>
+      <pre id="p-en">Medical textbook-style educational infographic, horizontal four-panel storyboard, 4:3 landscape, titled "Pathological Process of Knee Osteophyte Formation Caused by Fatigue Stress". Cream paper background with subtle texture; four equal-width rounded vertical panels arranged left to right, connected by thick gray arrows; large centered dark-gray Chinese title at top with a short underline.
+
+Panel 1 — dark-green numbered badge ①, header "正常膝关节" (Normal Knee Joint): hand-drawn watercolor anatomical illustration of a healthy knee; thin leader lines with Chinese labels 股骨髁 / 关节软骨 / 关节间隙 / 胫骨平台; pale-teal cartilage, beige-yellow bone; gray caption at bottom "软骨完整，关节间隙正常".
+
+Panel 2 — deep-red badge ②, header "反复疲劳性负荷" (Repetitive Fatigue Loading): dark-gray silhouette of a sprinting athlete pushing off, concentric red impact arcs around knee and ankle, red speed lines bursting from the ground; bold red caption "跑跳、急停、变向产生反复冲击负荷".
+
+Panel 3 — orange badge ③, header "微损伤与修复反应" (Micro-damage & Repair Response): close-up knee cross-section; black cracks on pale-teal cartilage labeled "软骨退变裂纹", purple-brown microfracture lines and red spots in subchondral bone labeled "软骨下骨微骨折", scattered orange osteoblast dots labeled "成骨细胞活跃"; orange caption "反复微损伤触发修复性成骨反应".
+
+Panel 4 — brown badge ④, header "骨赘形成（骨质增生）" (Osteophyte Formation): irregular yellow-brown bony spurs protruding from joint margins labeled "骨赘（骨刺）", visibly narrowed joint space labeled "关节间隙变窄", rough eroded cartilage labeled "软骨磨损"; brown caption "修复性成骨过度，形成骨赘".
+
+Bottom strip: light horizontal band with flow text "长期疲劳性负荷 → 微损伤积累 → 修复性成骨 → 骨质增生". Style: hand-drawn medical atlas illustration, soft creamy palette, flat 2D with subtle paper grain, neat symmetrical layout, crisp Chinese sans-serif labels, high detail --ar 4:3 --style raw --v 6</pre>
+    </div>
+
+    <div class="prompt-box">
+      <div class="prompt-head"><b>🇨🇳 提示词 B · 单幅生成稿复刻版（反推自 AI 实测成果）</b>
+        <button class="copy" data-t="p-b">复制提示词</button></div>
+      <pre id="p-b">医学教科书风格手绘插画，竖版 3:4，主题为「疲劳性骨质增生与运动康复」。米白色方格纸背景，画面主体为膝关节侧面剖面大特写：股骨、胫骨、腓骨呈米黄色带手绘排线，关节软骨淡青色，滑膜与骨髓呈橙红色点彩质感；膝关节内侧边缘长出不规则橙红色骨赘凸起，骨质表面粗糙。
+
+三处中文标注配橙色圆点引线：「关节软骨」指向股骨末端软骨层，「骨赘（骨质增生）」指向边缘骨性凸起，「关节间隙」指向胫股关节缝隙。画面左侧叠加一组四层半透明椭圆盘，由上至下呈青色、橙色、橙色、青色渐变，示意病程进展层次；右下角橙色线条勾勒跑步人物剪影，象征运动康复训练。
+
+顶部居中深灰色加粗大标题「疲劳性骨质增生与运动康复」。整体风格：手绘水彩医学图谱，柔和奶油色系，扁平2D带纸面肌理，解剖结构准确，线条细腻，中文无衬线标注清晰可读，高清细节，论文配图质感。</pre>
+    </div>
+
+    <div class="twrap" style="margin-top:18px">
+      <table class="stage">
+        <thead><tr><th>提示词要素</th><th>本图对应内容</th><th>写作要点</th></tr></thead>
+        <tbody>
+          <tr><td>类型 Format</td><td>医学教科书风格科普信息图 / 论文配图</td><td>先声明「信息图/四联画/单幅插画」，模型才知道如何组织版面</td></tr>
+          <tr><td>主体 Subject</td><td>膝关节病理结构与骨质增生过程</td><td>过程类主题用「分阶段描述」，结构类主题用「分区解剖描述」</td></tr>
+          <tr><td>构图 Layout</td><td>四面板+箭头 / 竖版单幅+层次盘+人物点缀</td><td>显式写出面板数量、排列方向、附加元素与位置</td></tr>
+          <tr><td>配色 Palette</td><td>米白底 · 米黄骨 · 淡青软骨 · 橙红病灶</td><td>每个结构指定专属颜色，颜色是医学图最重要的语义信号</td></tr>
+          <tr><td>文字 Text</td><td>标题、解剖标注、结论句、流程条</td><td>中文标注逐条用引号包裹；长句做好后期补字预案</td></tr>
+          <tr><td>风格 Style</td><td>手绘水彩 · 扁平2D · 纸面肌理 · 论文质感</td><td>风格词集中放段落尾部，还原度最高</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid2">
+      <div class="mini"><h3>⚙️ 模型适配建议</h3>
+        <p><b>即梦 / 通义万相：</b>中文直出，短标注渲染最稳，本作业生成稿即实测成果。<br>
+        <b>Midjourney v6：</b>英文版 + --ar 参数，中文标注易乱码，出图后补字。<br>
+        <b>DALL·E 3 / GPT-4o：</b>长中文提示词遵循度好，适合多面板指令。<br>
+        <b>Stable Diffusion：</b>建议只出画面后期加字；CFG 6–8 + 医学插画 LoRA。</p></div>
+      <div class="neg"><b>🚫 负面提示词（Negative Prompt）</b>
+        <p>照片写实、3D渲染、暗黑惊悚、血腥场面、解剖结构扭曲、多余肢体、乱码文字、水印、签名、过饱和霓虹色、构图倾斜、面板数量错误</p></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shead">
+      <span class="snum">03</span>
+      <div>
+        <h2>四代生成模型对比表 · GMM / GAN / VAE / DDPM</h2>
+        <p class="ssub">写提示词之前，先知道「模型是怎么生成图像的」——四代范式各有瓶颈，难点不会消失，只会换位置。</p>
+      </div>
+    </div>
+
+    <div class="twrap">
+      <table class="main">
+        <thead><tr><th>模型</th><th>它在解决什么问题</th><th>核心机制</th><th>训练信号</th><th>核心矛盾 → 为什么被接棒</th></tr></thead>
+        <tbody>
+          <tr class="r1">
+            <td><span class="badge b-gmm">GMM</span><div class="era">经典 · 浅层概率模型</div><span class="tagpill t-gmm">显式密度 · 离散潜变量</span></td>
+            <td>单个高斯只有一个峰，无法覆盖真实数据的多峰结构；需要既估计密度、又能软聚类和采样的模型。</td>
+            <td>离散潜变量先选第 k 个高斯组件，再从该组件采样；多个高斯按权重组合成灵活分布。</td>
+            <td>最大似然 / EM：先算每点软归属，再更新均值、协方差与混合权重。</td>
+            <td>固定高斯基元 + 浅层结构；高维下组件数、参数量爆炸，易陷局部最优。<span class="why">→ 为什么换：</span>高维复杂数据需要能自动学特征的深层表示。</td>
+          </tr>
+          <tr class="r2">
+            <td><span class="badge b-gan">GAN</span><div class="era">2014 · 深度生成模型</div><span class="tagpill t-gan">隐式密度 · 对抗训练</span></td>
+            <td>高维图像似然难算；绕开显式密度，直接生成足够锐利、看起来真实的样本。</td>
+            <td>生成器把噪声映射成样本，判别器判真伪；两者对抗，生成分布逐步逼近数据分布。</td>
+            <td>极小极大博弈：生成器与判别器交替优化；判别信号本身就是损失。</td>
+            <td>博弈无稳定下降方向；判别器强弱难平衡；易 mode collapse。<span class="why">→ 为什么换：</span>锐利但不可靠，「稳定」成为新的主线瓶颈。</td>
+          </tr>
+          <tr class="r3">
+            <td><span class="badge b-vae">VAE</span><div class="era">2013–2014 · 深度潜变量模型</div><span class="tagpill t-vae">变分下界 · 连续潜变量</span></td>
+            <td>深度潜变量模型后验通常不可解；需要可扩展、可稳定训练、潜空间可采样的方法。</td>
+            <td>编码器把数据压成潜变量，解码器重建；在潜空间采样解码即可生成。</td>
+            <td>最大化 ELBO：重建项 + 与先验的 KL 正则；重参数化让梯度可回传。</td>
+            <td>目标易产生「平均化」模糊结果；单层瓶颈丢细节；可能后验坍塌。<span class="why">→ 为什么换：</span>稳，却不够清晰；补对抗又把不稳定带回来。</td>
+          </tr>
+          <tr class="r4">
+            <td><span class="badge b-ddpm">DDPM</span><div class="era">2020 · 扩散概率模型</div><span class="tagpill t-ddpm">多层潜变量 · 迭代生成</span></td>
+            <td>想要高保真、覆盖较好的生成，又不依赖 GAN 那样难驯服的对抗博弈。</td>
+            <td>前向过程固定加噪，反向过程学习逐步去噪；从纯噪声迭代还原出数据。</td>
+            <td>各噪声等级上去噪回归 / 噪声预测；对应变分下界。</td>
+            <td>原始采样步数多，推理慢、算力贵；依赖噪声调度与指导强度。<span class="why ok">→ 交换：</span>用推理时间，换训练稳定 + 高质量 + 较好覆盖。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="twrap" style="margin-top:16px">
+      <table class="stage">
+        <thead><tr><th>范式</th><th>拿到了什么</th><th>付出了什么</th><th>瓶颈被搬到哪里</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge b-gmm">GMM</span></td><td>多峰密度、软聚类、可解释的高斯组件</td><td>浅层表达，依赖固定高斯基元</td><td><span class="tagpill t-gmm">表达力</span></td></tr>
+          <tr><td><span class="badge b-gan">GAN</span></td><td>一步生成，细节锐利</td><td>博弈不稳定，模式覆盖无保证</td><td><span class="tagpill t-gan">优化</span></td></tr>
+          <tr><td><span class="badge b-vae">VAE</span></td><td>训练稳定，潜空间规整，概率框架完整</td><td>细节易模糊，后验可能坍塌</td><td><span class="tagpill t-vae">近似推断</span></td></tr>
+          <tr><td><span class="badge b-ddpm">DDPM</span></td><td>稳定 + 清晰 + 较好覆盖</td><td>多步采样，推理成本高</td><td><span class="tagpill t-ddpm">推理成本</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="twrap" style="margin-top:16px">
+      <table class="stage axis">
+        <thead><tr><th>对比轴</th><th class="h1">GMM</th><th class="h2">GAN</th><th class="h3">VAE</th><th class="h4">DDPM</th></tr></thead>
+        <tbody>
+          <tr><th>密度形式</th><td>显式密度</td><td>隐式生成</td><td>显式下界</td><td>显式下界</td></tr>
+          <tr><th>潜变量结构</th><td>离散单层</td><td>无，噪声直接映射</td><td>连续单层</td><td>多层噪声链</td></tr>
+          <tr><th>训练信号</th><td>最大似然 / EM</td><td>生成器—判别器博弈</td><td>ELBO 变分下界</td><td>去噪回归</td></tr>
+          <tr><th>生成方式</th><td>按组件采样</td><td>一次前向</td><td>一次解码</td><td>多步迭代</td></tr>
+          <tr><th>主要失败</th><td>表达不足</td><td>不稳定 / 模式崩溃</td><td>模糊 / 后验坍塌</td><td>采样慢</td></tr>
+          <tr><th>典型强项</th><td>可解释密度、聚类</td><td>低延迟、锐利生成</td><td>潜空间、压缩</td><td>高保真、覆盖较好</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid2">
+      <div class="mini keep"><h3>🧠 为什么扩散这一代更稳？</h3>
+        <p>① 没有对抗博弈：训练像监督回归，梯度来自固定目标。<br>
+        ② 生成拆成很多小步：粗到细收敛，每步都更简单。<br>
+        ③ 所有噪声等级都有监督：每个样本在不同噪声强度下都参与训练。<br>
+        ④ 概率式目标覆盖数据：mode collapse 明显缓解。<br>
+        ⑤ 迭代允许纠错：代价是多步推理时间。</p></div>
+      <div class="mini shift"><h3>↩️ 回到本次生成实验</h3>
+        <p>本页生成稿正是扩散模型（DDPM 系）的产物：风格还原度高、短标注清晰，但四面板被简化成单幅——
+        因为「全局版式约束」恰是逐像素去噪的弱项。若用 GAN 生成，文字区域会彻底崩坏；
+        若用 VAE，整体会糊成水彩雾；GMM 则根本无法表达这种结构。这也解释了为什么即梦、Midjourney
+        等当代文生图产品几乎都以扩散模型为底座。</p></div>
+    </div>
+  </section>
+
+  <div class="close">
+    <p><span class="c1">GMM</span> 用混合换多峰；<span class="c2">GAN</span> 用博弈换清晰；<span class="c3">VAE</span> 用近似换稳定；<span class="c4">DDPM</span> 用时间换「稳定且清晰」——
+    而提示词工程，就是把人类意图翻译给这一代扩散模型的接口。</p>
+  </div>
+
+  <div class="foot">作业六 · 医学示意图提示词工程 × 四代生成模型对比 · 2026 AI 课程作品集<br>图片与页面位于同一文件夹，可离线运行</div>
+
+</main>
+
+<div class="toast" id="toast">已复制到剪贴板 ✓</div>
+
+<script>
+document.querySelectorAll('.copy').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const text = document.getElementById(btn.dataset.t).innerText;
+    const done = () => {
+      const t = document.getElementById('toast');
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 1800);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(() => fallback(text, done));
+    } else { fallback(text, done); }
+  });
+});
+function fallback(text, done) {
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); done(); } catch (e) {}
+  document.body.removeChild(ta);
+}
+</script>
+</body>
+</html>

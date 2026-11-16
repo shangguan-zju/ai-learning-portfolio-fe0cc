@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的学习成果 · AI Learning Portfolio</title>
+<style>
+  :root{
+    --bg1:#c9c6c3; --bg2:#b8b5b2;
+    --ink:#3a3735; --ink-soft:#7d7875;
+    --glass:linear-gradient(155deg,rgba(255,255,255,.66),rgba(255,255,255,.36));
+    --brd:rgba(255,255,255,.72);
+    --shadow:0 20px 46px -26px rgba(70,64,60,.6);
+    --radius:26px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+    color:var(--ink);min-height:100vh;padding:56px 20px 64px;-webkit-font-smoothing:antialiased;
+    background:
+      radial-gradient(900px 520px at 8% -6%, rgba(255,255,255,.8), transparent 62%),
+      radial-gradient(760px 480px at 96% 108%, rgba(255,255,255,.62), transparent 58%),
+      linear-gradient(160deg,var(--bg1),var(--bg2));
+    background-attachment:fixed;
+  }
+  .page{width:min(940px,100%);margin:0 auto}
+
+  /* ===== Hero ===== */
+  .hero{text-align:center;position:relative;padding:26px 0 46px}
+  .stack{position:relative;width:132px;height:92px;margin:0 auto 26px}
+  .stack span{
+    position:absolute;inset:0;border-radius:20px;border:1px solid var(--brd);
+    background:var(--glass);box-shadow:0 14px 30px -18px rgba(70,64,60,.55);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    animation:floaty 6s ease-in-out infinite;
+  }
+  .stack .l1{transform:translate(-30px,-24px) rotate(-9deg);opacity:.42;animation-delay:0s}
+  .stack .l2{transform:translate(-16px,-12px) rotate(-5deg);opacity:.56;animation-delay:.15s}
+  .stack .l3{transform:translate(0,0) rotate(0deg);opacity:.72;animation-delay:.3s}
+  .stack .l4{transform:translate(16px,12px) rotate(5deg);opacity:.56;animation-delay:.45s}
+  .stack .l5{transform:translate(30px,24px) rotate(9deg);opacity:.42;animation-delay:.6s}
+  @keyframes floaty{0%,100%{margin-top:0}50%{margin-top:-8px}}
+
+  .eyebrow{font-size:12px;letter-spacing:.28em;color:var(--ink-soft);text-transform:uppercase}
+  .hero h1{font-size:clamp(30px,6vw,50px);font-weight:800;letter-spacing:.02em;margin:12px 0 14px;
+    background:linear-gradient(180deg,#4b4643,#8b847f);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero .lead{font-size:14px;line-height:2;color:var(--ink-soft);max-width:520px;margin:0 auto}
+  .hero .badge{display:inline-block;margin-top:20px;font-size:11px;letter-spacing:.14em;padding:7px 16px;
+    border-radius:99px;color:#6b6460;background:rgba(255,255,255,.5);border:1px solid var(--brd);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+
+  /* ===== 时间轴 ===== */
+  .timeline{position:relative;margin-top:8px}
+  .work{
+    display:grid;grid-template-columns:64px 1fr;gap:18px;align-items:flex-start;
+    padding:24px 24px 24px 20px;margin-bottom:18px;border-radius:var(--radius);
+    background:var(--glass);border:1px solid var(--brd);box-shadow:var(--shadow);
+    backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);
+    transition:transform .5s cubic-bezier(.22,1,.36,1),box-shadow .5s cubic-bezier(.22,1,.36,1);
+    opacity:0;transform:translateY(26px);
+  }
+  .work.in{opacity:1;transform:none}
+  .work:hover{transform:translateY(-6px) scale(1.012);box-shadow:0 30px 56px -28px rgba(70,64,60,.7)}
+  .no{font-size:26px;font-weight:800;letter-spacing:-.02em;color:rgba(120,113,108,.42);
+    font-variant-numeric:tabular-nums;padding-top:2px}
+  .work h2{font-size:17px;font-weight:700;letter-spacing:.02em}
+  .work .meta{font-size:11.5px;color:var(--ink-soft);letter-spacing:.08em;margin:6px 0 10px}
+  .work .desc{font-size:13px;line-height:1.9;color:#5d5854}
+  .tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+  .tags span{font-size:11px;padding:4px 11px;border-radius:99px;color:#6b6460;
+    background:rgba(255,255,255,.55);border:1px solid var(--brd)}
+  .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+  .btn{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 18px;
+    font-size:12.5px;font-weight:600;color:#4b4643;text-decoration:none;border-radius:99px;
+    background:linear-gradient(155deg,rgba(255,255,255,.8),rgba(255,255,255,.5));
+    border:1px solid var(--brd);box-shadow:0 10px 22px -16px rgba(70,64,60,.6);
+    transition:transform .4s cubic-bezier(.22,1,.36,1),box-shadow .4s}
+  .btn:hover{transform:translateY(-3px);box-shadow:0 16px 28px -16px rgba(70,64,60,.7)}
+  .btn.ghost{background:rgba(255,255,255,.34)}
+
+  /* ===== 清单 ===== */
+  .check{margin-top:26px;padding:26px 24px;border-radius:var(--radius);
+    background:var(--glass);border:1px solid var(--brd);box-shadow:var(--shadow);
+    backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%)}
+  .check h2{font-size:15px;letter-spacing:.14em;margin-bottom:16px}
+  .check ul{list-style:none;display:grid;gap:11px}
+  .check li{font-size:13px;color:#5d5854;display:flex;gap:10px;align-items:flex-start;line-height:1.7}
+  .check li::before{content:"✓";flex:0 0 20px;height:20px;border-radius:50%;font-size:11px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;color:#6b6460;
+    background:rgba(255,255,255,.7);border:1px solid var(--brd)}
+
+  footer{text-align:center;margin-top:38px;font-size:11.5px;color:var(--ink-soft);letter-spacing:.08em;line-height:2}
+
+  @media (max-width:880px){
+    body{padding:40px 16px 52px}
+    .work{grid-template-columns:1fr;gap:10px;padding:22px 20px}
+    .no{font-size:20px}
+  }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <header class="hero">
+    <div class="stack" aria-hidden="true">
+      <span class="l1"></span><span class="l2"></span><span class="l3"></span>
+      <span class="l4"></span><span class="l5"></span>
+    </div>
+    <p class="eyebrow">2026 · AI 课程作品集</p>
+    <h1>我的学习成果</h1>
+    <p class="lead">从概念理解到氛围编程，再到医学图提示词工程<br>9 件作品，记录一次完整的 AI 创作练习</p>
+    <span class="badge">离线可运行 · 零外部依赖</span>
+  </header>
+
+  <section class="timeline">
+
+    <article class="work">
+      <div class="no">01</div>
+      <div>
+        <h2>MCP / Skill 概念图</h2>
+        <p class="meta">第一次课 · 概念梳理</p>
+        <p class="desc">用一张概念图讲清 Model Context Protocol 与 Skill 的关系，梳理 AI 工具如何被描述、调用与复用，为后续动手实践打底。</p>
+        <div class="tags"><span>概念图</span><span>MCP</span><span>Skill</span></div>
+        <div class="actions"><a class="btn" href="mcp.html">打开作品 →</a></div>
+      </div>
+    </article>
+
+    <article class="work">
+      <div class="no">02</div>
+      <div>
+        <h2>双版本贪吃蛇</h2>
+        <p class="meta">第二次课 · 氛围编程</p>
+        <p class="desc">同一套玩法，两种氛围包装：火影忍者主题与지민主题。通过更换配色、光效与文案，比较不同视觉主题对游戏体验的影响。</p>
+        <div class="tags"><span>氛围编程</span><span>Canvas</span><span>主题设计</span></div>
+        <div class="actions">
+          <a class="btn" href="snake.html">火影忍者版 →</a>
+          <a class="btn ghost" href="jimin-snake.html">지민 版 →</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="work">
+      <div class="no">03</div>
+      <div>
+        <h2>CNN 作者识别</h2>
+        <p class="meta">第三次课 · 模型实验</p>
+        <p class="desc">用卷积神经网络对作品风格 / 作者进行分类，观察卷积与池化如何逐层提取特征，理解「机器如何看图」。</p>
+        <div class="tags"><span>CNN</span><span>特征提取</span><span>分类</span></div>
+        <div class="actions"><a class="btn" href="cnn.html">打开作品 →</a></div>
+      </div>
+    </article>
+
+    <article class="work">
+      <div class="no">04</div>
+      <div>
+        <h2>精确率 · 召回率评估</h2>
+        <p class="meta">混淆矩阵专项 · 例题演算</p>
+        <p class="desc">从混淆矩阵的 TP / FP / FN / TN 出发，通过人脸考勤、垃圾短信等例题完整演算准确率、精确率、召回率与 F1，附点击核对的答案与解析。</p>
+        <div class="tags"><span>混淆矩阵</span><span>准确率</span><span>精确率 · 召回率</span><span>F1</span></div>
+        <div class="actions"><a class="btn" href="metrics.html">查看例题 →</a></div>
+      </div>
+    </article>
+
+    <article class="work">
+      <div class="no">05</div>
+      <div>
+        <h2>音频对比与提示词改造</h2>
+        <p class="meta">第五次课 · 生成式音频</p>
+        <p class="desc">对比「原版」与「女声版」两段音频的客观参数，并从提示词角度诊断差异根因，给出可直接复制的强化提示词。</p>
+        <div class="tags"><span>音频对比</span><span>提示词工程</span><span>双版本</span></div>
+        <div class="actions"><a class="btn" href="lixintong-audio-compare.html">打开作品 →</a></div>
+      </div>
+    </article>
+
+    <article class="work">
+      <div class="no">06</div>
+      <div>
+        <h2>医学图提示词工程 × 四代生成模型对比</h2>
+        <p class="meta">第六次课 · 图像生成与提示词</p>
+        <p class="desc">以膝关节骨质增生病理图为例：反推完整中英文图像提示词，用生成模型实测出图并对照原稿与生成稿差异，整合 GMM / GAN / VAE / DDPM 四代生成范式对比表。</p>
+        <div class="tags"><span>图像提示词</span><span>医学信息图</span><span>原稿 vs 生成稿</span><span>GMM / GAN / VAE / DDPM</span></div>
+        <div class="actions"><a class="btn" href="prompt-genmodels.html">打开作品 →</a></div>
+      </div>
+    </article>
+
+    <article class="work">
+      <div class="no">07</div>
+      <div>
+        <h2>Hugging Face vs 豆包 · 身体结构动态视频生成对比</h2>
+        <p class="meta">第七次课 · 视频生成平台实测</p>
+        <p class="desc">同一主题（解剖学 / 康复医学）同一任务（身体结构动态视频生成），横向对比 Hugging Face Spaces（ControlNet + 开源模型栈）与豆包 Seedance（统一多模态架构）在模型、可控参数、提示词公式与出图质量上的差异。</p>
+        <div class="tags"><span>视频生成对比</span><span>Hugging Face</span><span>豆包 Seedance</span><span>动态提示词</span></div>
+        <div class="actions"><a class="btn" href="hf-doubao-video-compare.html">打开作品 →</a></div>
+      </div>
+    </article>
+
+    <article class="work">
+      <div class="no">08</div>
+      <div>
+        <h2>科研数据助手的理解与运用 · Skill 深度解读</h2>
+        <p class="meta">第八次课 · 技能拆解与实战</p>
+        <p class="desc">三栏对照页：左栏 research-data-analysis-workspace 技能原文，中栏结构化解读，右栏实战案例——用该技能将一篇 ACL 着陆生物力学论文（NAJSPT 2009）整理为四张可视化图表与统计表，完整还原「数据识别 → 学科路由 → 最小充分方法 → 视觉表达 → 产物交付」的工作流。</p>
+        <div class="tags"><span>Skill 解读</span><span>三栏对照</span><span>科研数据可视化</span><span>ECharts</span></div>
+        <div class="actions"><a class="btn" href="research-data-analysis-workspace.html">打开作品 →</a></div>
+      </div>
+    </article>
+
+    <article class="work">
+      <div class="no">09</div>
+      <div>
+        <h2>偏差体检报告 · 三处受检对象复查</h2>
+        <p class="meta">第九次课 · 第三部分练习</p>
+        <p class="desc">把作品 06 医学示意图、作品 05 双版本音频、作品 07 双平台视频当作三位「受检者」，用同一套五步法逐项比对「要求值」与「实测值」，15 项检查判出 2 项正常 / 7 项轻度 / 6 项异常，并归因为模型能力、产品取舍、提示词漏洞三类，输出处方与复查计划。</p>
+        <div class="tags"><span>偏差体检</span><span>三级判级</span><span>归因分析</span><span>处方与复查</span></div>
+        <div class="actions"><a class="btn" href="bias-checkup-report.html">打开作品 →</a></div>
+      </div>
+    </article>
+
+  </section>
+
+  <section class="check">
+    <h2>作品确认清单</h2>
+    <ul>
+      <li>01 MCP / Skill 概念图已生成并可打开</li>
+      <li>02 双版本贪吃蛇（火影 / 지민）均可运行</li>
+      <li>03 CNN 作者识别实验页可访问</li>
+      <li>04 精确率 · 召回率评估内容完整</li>
+      <li>05 音频对比页 A / B 两版音频均可播放</li>
+      <li>06 医学图提示词页双图对照，中英文提示词可一键复制</li>
+      <li>07 Hugging Face vs 豆包视频对比页，两段视频并排可播放，提示词可一键复制</li>
+      <li>08 科研数据助手三栏对照页可访问，右栏案例图表正常渲染</li>
+      <li>09 偏差体检报告：三处受检对象、15 项检查、判级汇总、处方与复查计划完整</li>
+    </ul>
+  </section>
+
+  <footer>
+    我的学习成果 · 全部文件与本页面位于同一文件夹<br>
+    所有插图均为纯 CSS / 内联实现，无任何外部资源依赖，可离线运行
+  </footer>
+
+</main>
+
+<script>
+const items = document.querySelectorAll('.work');
+if ('IntersectionObserver' in window) {
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+  items.forEach((el, i) => { el.style.transitionDelay = (i * 70) + 'ms'; io.observe(el); });
+} else {
+  items.forEach((el) => el.classList.add('in'));
+}
+</script>
+</body>
+</html>

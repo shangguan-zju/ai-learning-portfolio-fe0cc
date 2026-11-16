@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>精确率 · 召回率评估 · 混淆矩阵例题</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: "Inter", "Noto Sans SC", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #fafafa;
+    min-height: 100vh; color: #1d1d1f;
+    -webkit-font-smoothing: antialiased;
+  }
+  .back {
+    position: fixed; top: 18px; left: 18px; z-index: 10;
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.9);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(0,0,0,0.08);
+    padding: 10px 18px; border-radius: 999px;
+    text-decoration: none; font-size: 13px; font-weight: 500;
+    color: #1d1d1f; min-height: 44px;
+    box-shadow: 0 4px 16px -4px rgba(0,0,0,0.1);
+  }
+  .container { max-width: 960px; margin: 0 auto; padding: 80px 24px 60px; }
+
+  .hero {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    border-radius: 24px; padding: 44px 36px;
+    color: #fff; margin-bottom: 32px;
+    box-shadow: 0 12px 40px -12px rgba(79,172,254,0.5);
+  }
+  .hero .tag {
+    display: inline-block; padding: 6px 14px; border-radius: 999px;
+    background: rgba(255,255,255,0.25); font-size: 12px; font-weight: 500;
+    letter-spacing: 0.15em; margin-bottom: 16px;
+  }
+  .hero h1 { font-size: clamp(24px, 4vw, 34px); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
+  .hero p { font-size: 14px; opacity: 0.92; max-width: 600px; line-height: 1.7; }
+
+  .section {
+    background: #fff; border-radius: 20px; padding: 28px;
+    border: 1px solid #e5e5ea; margin-bottom: 24px;
+  }
+  .section h2 {
+    font-size: 18px; font-weight: 600; margin-bottom: 18px;
+    display: flex; align-items: center; gap: 10px;
+    letter-spacing: -0.01em;
+  }
+  .section .lead { font-size: 13.5px; line-height: 1.9; color: #3a3a3c; margin-bottom: 16px; }
+
+  /* 公式卡 */
+  .formulas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .formula {
+    background: linear-gradient(135deg, #f5f5f7, #ececf1);
+    border-radius: 14px; padding: 20px 14px; text-align: center;
+  }
+  .formula .name { font-size: 12px; font-weight: 600; color: #86868b; letter-spacing: 0.1em; margin-bottom: 14px; }
+  .formula .math { font-size: 16px; font-weight: 600; color: #1d1d1f; line-height: 1.4; }
+  .frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; margin: 0 4px; }
+  .frac .top { padding: 0 8px; border-bottom: 2px solid #1d1d1f; }
+  .frac .bot { padding: 0 8px; }
+  .formula .note { font-size: 11px; color: #86868b; margin-top: 14px; line-height: 1.6; }
+
+  /* 混淆矩阵表 */
+  .matrix { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 18px; }
+  .matrix th, .matrix td { padding: 10px 10px; text-align: center; border: 1px solid #e5e5ea; }
+  .matrix th { background: #f5f5f7; font-weight: 600; font-size: 12px; color: #6e6e73; }
+  .matrix td.tp { background: #e8f9ee; font-weight: 700; }
+  .matrix td.fn { background: #fdecea; font-weight: 700; }
+  .matrix td.fp { background: #fff4e5; font-weight: 700; }
+  .matrix td.tn { background: #f5f5f7; }
+  .matrix td small { display: block; font-size: 10px; font-weight: 400; color: #86868b; margin-top: 2px; }
+
+  /* 题目与计算步骤 */
+  .case-intro { font-size: 13.5px; line-height: 1.9; color: #3a3a3c; background: #eef6ff; border: 1px solid #cfe6ff; border-radius: 12px; padding: 14px 16px; margin-bottom: 18px; }
+  .steps { display: grid; gap: 10px; }
+  .step { display: flex; gap: 12px; align-items: flex-start; background: #f5f5f7; border-radius: 12px; padding: 12px 16px; font-size: 13.5px; line-height: 1.8; }
+  .step .no { flex: 0 0 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, #4facfe, #00f2fe); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
+  .step code { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 12.5px; background: #fff; padding: 1px 7px; border-radius: 6px; border: 1px solid #e5e5ea; }
+  .case-insight { margin-top: 16px; font-size: 13px; line-height: 1.9; color: #3a3a3c; border-left: 3px solid #4facfe; padding-left: 14px; }
+
+  /* 练一练 */
+  .q-title { font-size: 15px; font-weight: 600; margin-bottom: 10px; }
+  .q-desc { font-size: 13.5px; line-height: 1.9; color: #3a3a3c; margin-bottom: 16px; }
+  .reveal-btn {
+    padding: 12px 24px; border: none; border-radius: 999px; cursor: pointer;
+    background: linear-gradient(135deg, #4facfe, #00f2fe); color: #fff;
+    font-size: 13px; font-weight: 600; font-family: inherit; min-height: 44px;
+    box-shadow: 0 8px 20px -8px rgba(79,172,254,0.6);
+    transition: transform .2s ease;
+  }
+  .reveal-btn:hover { transform: translateY(-2px); }
+  .answer { display: none; margin-top: 18px; }
+  .answer.show { display: block; }
+
+  @media (max-width: 600px) {
+    .container { padding: 70px 16px 40px; }
+    .hero { padding: 32px 22px; border-radius: 18px; }
+    .section { padding: 20px; border-radius: 16px; }
+    .formulas { grid-template-columns: 1fr; }
+    .matrix { font-size: 12px; }
+    .matrix th, .matrix td { padding: 8px 6px; }
+  }
+</style>
+</head>
+<body>
+
+<a class="back" href="index.html">← 返回作品集</a>
+
+<div class="container">
+
+  <div class="hero">
+    <div class="tag">混淆矩阵专项 · 例题演算</div>
+    <h1>精确率 · 召回率评估</h1>
+    <p>从混淆矩阵的 TP / FP / FN / TN 出发，完整演算准确率、精确率、召回率与 F1——先读矩阵，再套公式，最后对比指标背后的取舍。</p>
+  </div>
+
+  <!-- 混淆矩阵基础 -->
+  <div class="section">
+    <h2>🧮 先读懂混淆矩阵</h2>
+    <p class="lead">混淆矩阵把「模型的判定」与「真实情况」交叉对比，得到 4 个格子。所有评估指标都从这 4 个格子算出来：</p>
+    <table class="matrix">
+      <tr><th></th><th>模型判为「正」</th><th>模型判为「负」</th></tr>
+      <tr><th>实际是「正」</th><td class="tp">TP<small>真正例 · 判对了</small></td><td class="fn">FN<small>假负例 · 漏报 ⚠</small></td></tr>
+      <tr><th>实际是「负」</th><td class="fp">FP<small>假正例 · 误报</small></td><td class="tn">TN<small>真负例 · 判对了</small></td></tr>
+    </table>
+    <p class="lead" style="margin-bottom:0">记忆口诀：<b>横看实际，竖看判定</b>；对角线（TP + TN）是判对的，非对角线（FP + FN）是判错的。</p>
+  </div>
+
+  <!-- 四个公式 -->
+  <div class="section">
+    <h2>📐 四个公式</h2>
+    <div class="formulas">
+      <div class="formula">
+        <div class="name">准确率 ACCURACY</div>
+        <div class="math">A = <span class="frac"><span class="top">TP + TN</span><span class="bot">TP + TN + FP + FN</span></span></div>
+        <div class="note">全体样本中判对的比例<br>类别不平衡时会「虚高」</div>
+      </div>
+      <div class="formula">
+        <div class="name">精确率（精准率）PRECISION</div>
+        <div class="math">P = <span class="frac"><span class="top">TP</span><span class="bot">TP + FP</span></span></div>
+        <div class="note">判为「正」的样本里<br>有多少是真的</div>
+      </div>
+      <div class="formula">
+        <div class="name">召回率 RECALL</div>
+        <div class="math">R = <span class="frac"><span class="top">TP</span><span class="bot">TP + FN</span></span></div>
+        <div class="note">真实「正」例中<br>被找回来了多少</div>
+      </div>
+      <div class="formula">
+        <div class="name">F1 分数</div>
+        <div class="math">F1 = 2 × <span class="frac"><span class="top">P × R</span><span class="bot">P + R</span></span></div>
+        <div class="note">P 与 R 的调和平均<br>任一项低都会被拉低</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 例题一 -->
+  <div class="section">
+    <h2>✏️ 例题一 · 人脸识别考勤</h2>
+    <div class="case-intro">
+      <b>题目：</b>某班 100 人，实际到课 60 人、缺勤 40 人。人脸识别系统判定 50 人「到课」、50 人「缺勤」。核对后发现：判为「到课」的 50 人中有 45 人真实到课；真实到课的 60 人中有 15 人被误判为「缺勤」。求四个指标。
+    </div>
+    <table class="matrix">
+      <tr><th></th><th>判定：到课</th><th>判定：缺勤</th><th>合计</th></tr>
+      <tr><th>实际：到课</th><td class="tp">TP = 45</td><td class="fn">FN = 15<small>漏记 ⚠</small></td><td>60</td></tr>
+      <tr><th>实际：缺勤</th><td class="fp">FP = 5<small>误记</small></td><td class="tn">TN = 35</td><td>40</td></tr>
+      <tr><th>合计</th><td>50</td><td>50</td><td>100</td></tr>
+    </table>
+    <div class="steps">
+      <div class="step"><span class="no">1</span><span>准确率 A = <code>(TP + TN) / 总数 = (45 + 35) / 100 = 80.0%</code></span></div>
+      <div class="step"><span class="no">2</span><span>精确率 P = <code>TP / (TP + FP) = 45 / (45 + 5) = 45 / 50 = 90.0%</code></span></div>
+      <div class="step"><span class="no">3</span><span>召回率 R = <code>TP / (TP + FN) = 45 / (45 + 15) = 45 / 60 = 75.0%</code></span></div>
+      <div class="step"><span class="no">4</span><span>F1 = <code>2 × 0.90 × 0.75 / (0.90 + 0.75) = 1.35 / 1.65 ≈ 81.8%</code></span></div>
+    </div>
+    <div class="case-insight">
+      <b>解析：</b>三个「80% 上下」的数含义完全不同——准确率看全局（80%），精确率管误记（报「到课」的里面 90% 是真的），召回率管漏记（60 个真到课只找回 75%）。考勤场景每漏记 1 人都要人工补录，<b>召回率 75% 才是短板</b>。
+    </div>
+  </div>
+
+  <!-- 例题二 -->
+  <div class="section">
+    <h2>✏️ 例题二 · 垃圾短信识别</h2>
+    <div class="case-intro">
+      <b>题目：</b>200 条短信中有 30 条垃圾短信。系统标出 25 条「垃圾」，其中 20 条判断正确、5 条误拦正常短信；另有 10 条垃圾短信漏网。求四个指标。
+    </div>
+    <table class="matrix">
+      <tr><th></th><th>判定：垃圾</th><th>判定：正常</th><th>合计</th></tr>
+      <tr><th>实际：垃圾</th><td class="tp">TP = 20</td><td class="fn">FN = 10<small>漏网 ⚠</small></td><td>30</td></tr>
+      <tr><th>实际：正常</th><td class="fp">FP = 5<small>误拦</small></td><td class="tn">TN = 165</td><td>170</td></tr>
+      <tr><th>合计</th><td>25</td><td>175</td><td>200</td></tr>
+    </table>
+    <div class="steps">
+      <div class="step"><span class="no">1</span><span>准确率 A = <code>(20 + 165) / 200 = 92.5%</code></span></div>
+      <div class="step"><span class="no">2</span><span>精确率 P = <code>20 / (20 + 5) = 80.0%</code></span></div>
+      <div class="step"><span class="no">3</span><span>召回率 R = <code>20 / (20 + 10) ≈ 66.7%</code></span></div>
+      <div class="step"><span class="no">4</span><span>F1 = <code>2 × 0.80 × 0.667 / (0.80 + 0.667) ≈ 1.067 / 1.467 ≈ 72.7%</code></span></div>
+    </div>
+    <div class="case-insight">
+      <b>解析：</b>准确率高达 92.5%，F1 却只有 72.7% —— 类别不平衡（正常 170 vs 垃圾 30）时准确率会「虚高」：就算把所有短信都判为正常，准确率也有 85%。<b>这种场景必须看 F1，才不会被准确率骗到。</b>
+    </div>
+  </div>
+
+  <!-- 练一练 -->
+  <div class="section">
+    <h2>🎯 练一练 · 自己算再核对</h2>
+    <div class="q-title">🏥 练习 · AI 体检报告初筛</div>
+    <p class="q-desc">医院用 AI 初筛 <b>1000</b> 份体检报告，其中实际患病 <b>100</b> 人。系统判出 <b>120</b> 人「疑似患病」，其中 <b>80</b> 人确实患病。<br>先自己在草稿纸上算出准确率、精确率、召回率、F1，再点击按钮核对答案。</p>
+    <button class="reveal-btn" id="revealBtn" type="button">显示答案与解析</button>
+    <div class="answer" id="answer">
+      <table class="matrix">
+        <tr><th></th><th>判定：患病</th><th>判定：健康</th><th>合计</th></tr>
+        <tr><th>实际：患病</th><td class="tp">TP = 80</td><td class="fn">FN = 20<small>漏诊 ⚠</small></td><td>100</td></tr>
+        <tr><th>实际：健康</th><td class="fp">FP = 40<small>误报</small></td><td class="tn">TN = 860</td><td>900</td></tr>
+        <tr><th>合计</th><td>120</td><td>880</td><td>1000</td></tr>
+      </table>
+      <div class="steps">
+        <div class="step"><span class="no">1</span><span>准确率 A = <code>(80 + 860) / 1000 = 94.0%</code></span></div>
+        <div class="step"><span class="no">2</span><span>精确率 P = <code>80 / (80 + 40) = 80 / 120 ≈ 66.7%</code></span></div>
+        <div class="step"><span class="no">3</span><span>召回率 R = <code>80 / (80 + 20) = 80 / 100 = 80.0%</code></span></div>
+        <div class="step"><span class="no">4</span><span>F1 = <code>2 × 0.667 × 0.80 / (0.667 + 0.80) ≈ 1.067 / 1.467 ≈ 72.7%</code></span></div>
+      </div>
+      <div class="case-insight">
+        <b>解析：</b>医疗初筛中漏诊（FN = 20）的代价远高于误报（FP = 40），所以尽管精确率只有 66.7%，<b>80% 的召回率才是本场景最该盯住的指标</b>——误报可以靠复查排除，漏诊没有第二次机会。
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const btn = document.getElementById('revealBtn');
+  const answer = document.getElementById('answer');
+  btn.addEventListener('click', () => {
+    const show = answer.classList.toggle('show');
+    btn.textContent = show ? '收起答案' : '显示答案与解析';
+  });
+</script>
+
+</body>
+</html>

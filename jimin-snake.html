@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>지민·贪吃蛇 | JIMIN SNAKE</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Orbitron:wght@500;700;900&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    background:
+      radial-gradient(ellipse at 15% 20%, rgba(147,51,234,0.35) 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 80%, rgba(236,72,153,0.25) 0%, transparent 55%),
+      radial-gradient(ellipse at 50% 50%, rgba(34,211,238,0.1) 0%, transparent 60%),
+      linear-gradient(180deg, #050208 0%, #0a0410 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    user-select: none;
+    position: relative;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 50% 40%, rgba(5,2,10,0.55), rgba(2,0,6,0.88));
+    z-index: 0;
+  }
+  body > * { position: relative; z-index: 1; }
+
+  /* 漂浮霓虹光球 */
+  .orb { position: fixed; border-radius: 50%; filter: blur(90px); z-index: 0; pointer-events: none; }
+  .orb1 { width: 420px; height: 420px; background: rgba(147,51,234,0.35); top: -120px; left: -100px; animation: drift1 14s ease-in-out infinite alternate; }
+  .orb2 { width: 360px; height: 360px; background: rgba(236,72,153,0.26); bottom: -100px; right: -80px; animation: drift2 18s ease-in-out infinite alternate; }
+  @keyframes drift1 { from { transform: translate(0,0) scale(1); } to { transform: translate(70px,50px) scale(1.18); } }
+  @keyframes drift2 { from { transform: translate(0,0) scale(1.1); } to { transform: translate(-60px,-40px) scale(0.95); } }
+
+  /* 霓虹蛇素材装饰层(素材生成完成后自动浮现) */
+  .snake-art {
+    position: fixed;
+    left: -60px; bottom: -55px;
+    width: 380px;
+    opacity: 0;
+    transition: opacity 1.2s ease;
+    filter: drop-shadow(0 0 24px rgba(34,211,238,0.55)) drop-shadow(0 0 64px rgba(168,85,247,0.4));
+    pointer-events: none;
+    z-index: 0;
+    animation: artFloat 7s ease-in-out infinite alternate;
+  }
+  .snake-art.ready { opacity: .85; }
+  @keyframes artFloat { from { transform: translateY(0) rotate(-3deg); } to { transform: translateY(-16px) rotate(2deg); } }
+
+  /* 朴智旻贴纸: 吃到食物时弹出 */
+  .jimin-pop {
+    position: absolute;
+    width: 84px; height: 84px;
+    object-fit: contain;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 4;
+    transform: translate(-50%, -50%) scale(.3);
+    filter: drop-shadow(0 6px 14px rgba(0,0,0,0.45)) drop-shadow(0 0 18px rgba(255,110,199,0.35));
+  }
+  .jimin-pop.show { animation: jiminPop .85s cubic-bezier(.34,1.56,.64,1) forwards; }
+  @keyframes jiminPop {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(.2) rotate(-12deg); }
+    35% { opacity: 1; transform: translate(-50%, -60%) scale(1.15) rotate(5deg); }
+    55% { opacity: 1; transform: translate(-50%, -52%) scale(.95) rotate(-3deg); }
+    75% { opacity: 1; transform: translate(-50%, -58%) scale(1.06) rotate(2deg); }
+    100% { opacity: 0; transform: translate(-50%, -85%) scale(.92) rotate(0deg); }
+  }
+
+  /* 标题入场动画 */
+  h1 {
+    font-family: "Black Han Sans", "Noto Sans SC", sans-serif;
+    font-size: 42px;
+    margin-bottom: 6px;
+    letter-spacing: 8px;
+    color: #c084fc;
+    font-weight: 400;
+    text-shadow: 0 0 18px rgba(168,85,247,0.9), 0 0 46px rgba(147,51,234,0.5), 0 3px 10px rgba(0,0,0,0.9);
+    animation: titleIn .8s cubic-bezier(.22,1,.36,1) both;
+  }
+  @keyframes titleIn {
+    from { opacity: 0; transform: translateY(-20px) scale(0.92); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  h1 small {
+    color: #f0abfc;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 5px;
+    margin-left: 12px;
+    font-family: "Orbitron", sans-serif;
+    text-shadow: 0 0 12px rgba(240,171,252,0.7);
+  }
+  .songs {
+    margin-bottom: 16px;
+    font-family: "Orbitron", sans-serif;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: rgba(192,132,252,0.55);
+    text-align: center;
+  }
+  .songs span { margin: 0 9px; white-space: nowrap; }
+
+  .layout {
+    display: flex;
+    gap: 28px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .game-side { display: flex; flex-direction: column; align-items: center; }
+  .panel-side { width: 260px; flex-shrink: 0; }
+
+  /* HUD 信息条 */
+  .info {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 14px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .info span {
+    background: rgba(10,4,20,0.6);
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(168,85,247,0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: transform .25s cubic-bezier(.22,1,.36,1), box-shadow .25s ease;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 0 6px 14px -4px rgba(0,0,0,0.6), 0 0 14px rgba(147,51,234,0.15);
+  }
+  .info span.pulse {
+    animation: hudPulse .4s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes hudPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.12); box-shadow: 0 0 18px rgba(192,132,252,0.8); }
+    100% { transform: scale(1); }
+  }
+  .info b {
+    color: #c9a6ff;
+    font-family: "Orbitron", monospace;
+    font-variant-numeric: tabular-nums;
+    margin-left: 4px;
+  }
+  .info .combo b { color: #ff6ec7; }
+
+  /* 画布外框 */
+  .canvas-wrap {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(147,51,234,0.55), 0 0 70px rgba(236,72,153,0.18), 0 14px 40px rgba(0,0,0,0.7);
+    transition: transform .05s ease-out;
+  }
+  .canvas-wrap.shake { will-change: transform; }
+  #board {
+    background: #0d0517;
+    border: 3px solid #a855f7;
+    border-radius: 12px;
+    display: block;
+    transition: filter .35s ease;
+  }
+  .canvas-wrap.paused #board,
+  .canvas-wrap.over #board { filter: blur(4px) brightness(0.65); }
+
+  /* 静音按钮 */
+  .sound-btn {
+    position: absolute;
+    top: 10px; right: 12px;
+    width: 32px; height: 32px;
+    background: rgba(5,2,12,0.6);
+    border: 1px solid rgba(168,85,247,0.45);
+    border-radius: 50%;
+    color: #c084fc;
+    font-size: 14px;
+    cursor: pointer;
+    z-index: 5;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s ease;
+  }
+  .sound-btn:hover { background: rgba(168,85,247,0.3); transform: scale(1.1); }
+  .sound-btn:active { transform: scale(0.92); }
+
+  .tips {
+    margin-top: 14px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.68);
+    text-align: center;
+    line-height: 1.7;
+  }
+  kbd {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(192,132,252,0.4);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: inherit;
+    font-size: 12px;
+  }
+  .tips .hint {
+    display: inline-block;
+    color: #c084fc;
+    animation: hintPulse 1.6s ease-in-out infinite;
+  }
+  @keyframes hintPulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+  .borahae {
+    margin-top: 6px;
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: rgba(240,171,252,0.75);
+  }
+
+  /* 排行榜面板 */
+  .leaderboard {
+    background: rgba(10,4,20,0.6);
+    border: 2px solid #a855f7;
+    border-radius: 14px;
+    padding: 16px 14px;
+    box-shadow: 0 0 26px rgba(147,51,234,0.4), 0 10px 30px rgba(0,0,0,0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: panelIn .6s cubic-bezier(.22,1,.36,1) .15s both;
+  }
+  @keyframes panelIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .leaderboard h2 {
+    font-family: "Black Han Sans", sans-serif;
+    font-size: 22px;
+    color: #c084fc;
+    text-align: center;
+    letter-spacing: 6px;
+    margin-bottom: 4px;
+    text-shadow: 0 0 12px rgba(168,85,247,0.7);
+    font-weight: 400;
+  }
+  .leaderboard .subtitle {
+    text-align: center;
+    font-size: 10px;
+    color: rgba(240,171,252,0.45);
+    letter-spacing: 3px;
+    margin-bottom: 14px;
+    font-family: "Orbitron", sans-serif;
+  }
+  .lb-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 320px;
+    overflow-y: auto;
+    padding-right: 2px;
+  }
+  .lb-list::-webkit-scrollbar { width: 4px; }
+  .lb-list::-webkit-scrollbar-thumb { background: rgba(168,85,247,0.5); border-radius: 2px; }
+  .lb-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 8px;
+    border-left: 3px solid rgba(168,85,247,0.45);
+    font-size: 14px;
+    transition: all .22s cubic-bezier(.22,1,.36,1);
+  }
+  .lb-row:hover {
+    background: rgba(168,85,247,0.14);
+    border-left-color: #c084fc;
+    transform: translateX(2px);
+  }
+  .lb-row.is-new {
+    background: rgba(255,209,102,0.14);
+    border-left-color: #ffd166;
+    animation: glow 1.5s ease-in-out infinite;
+  }
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 0 rgba(255,209,102,0); }
+    50% { box-shadow: 0 0 14px rgba(255,209,102,0.45); }
+  }
+  .lb-rank {
+    width: 22px; text-align: center;
+    font-weight: 800; color: #c084fc;
+    font-size: 15px; flex-shrink: 0;
+    font-family: "Orbitron", sans-serif;
+  }
+  .lb-row:nth-child(1) .lb-rank { color: #ffd166; }
+  .lb-row:nth-child(2) .lb-rank { color: #e5e0f0; }
+  .lb-row:nth-child(3) .lb-rank { color: #cd7f32; }
+  .lb-name {
+    flex: 1; color: #fff;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .lb-score {
+    color: #c9a6ff; font-weight: 700; flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+    font-family: "Orbitron", sans-serif;
+  }
+  .lb-empty {
+    text-align: center; color: rgba(255,255,255,0.4);
+    padding: 30px 0; font-size: 13px; line-height: 1.7;
+  }
+  .lb-clear {
+    margin-top: 12px; width: 100%;
+    background: transparent;
+    border: 1px solid rgba(255,80,80,0.4);
+    color: rgba(255,150,150,0.8);
+    padding: 7px; border-radius: 6px;
+    cursor: pointer; font-size: 12px; letter-spacing: 2px;
+    transition: all .2s ease;
+    font-family: inherit;
+  }
+  .lb-clear:hover { background: rgba(255,80,80,0.15); color: #ff8080; }
+
+  /* 上榜 modal */
+  .modal-mask {
+    position: fixed; inset: 0;
+    background: rgba(2,0,8,0.78);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .modal-mask.show { display: flex; animation: fadeIn .25s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .modal {
+    background: linear-gradient(180deg, #150826, #22093a);
+    border: 2px solid #a855f7;
+    border-radius: 18px;
+    padding: 30px 26px;
+    width: 90%; max-width: 360px;
+    text-align: center;
+    box-shadow: 0 0 50px rgba(147,51,234,0.55), 0 20px 60px rgba(0,0,0,0.65);
+    animation: pop .35s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes pop {
+    from { transform: scale(0.7) translateY(20px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  .modal h3 {
+    font-family: "Black Han Sans", sans-serif;
+    color: #c9a6ff;
+    font-size: 26px;
+    letter-spacing: 5px;
+    margin-bottom: 10px;
+    text-shadow: 0 0 14px rgba(168,85,247,0.7);
+    font-weight: 400;
+  }
+  .modal p { color: rgba(255,255,255,0.8); font-size: 15px; margin-bottom: 20px; }
+  .modal p b {
+    color: #ff6ec7; font-size: 26px; margin: 0 4px;
+    font-family: "Orbitron", monospace; font-weight: 800;
+  }
+  .modal input {
+    width: 100%;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(168,85,247,0.45);
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-family: inherit;
+    margin-bottom: 16px;
+    outline: none;
+    text-align: center;
+    letter-spacing: 2px;
+    transition: all .2s ease;
+  }
+  .modal input:focus {
+    border-color: #c084fc;
+    box-shadow: 0 0 16px rgba(168,85,247,0.5);
+    background: rgba(0,0,0,0.65);
+  }
+  .modal-btns { display: flex; gap: 10px; }
+  .modal-btns button {
+    flex: 1; border: none; cursor: pointer;
+    padding: 12px; border-radius: 10px;
+    font-family: inherit; font-size: 15px;
+    letter-spacing: 3px; transition: all .18s ease;
+  }
+  .modal-btns .ok {
+    background: linear-gradient(135deg, #a855f7, #7c3aed);
+    color: #fff;
+    box-shadow: 0 4px 0 #5b21b6, 0 8px 16px -4px rgba(147,51,234,0.5);
+  }
+  .modal-btns .ok:active { transform: translateY(3px); box-shadow: 0 1px 0 #5b21b6; }
+  .modal-btns .skip {
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.6);
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .modal-btns .skip:hover { background: rgba(255,255,255,0.18); color: #fff; }
+
+  /* 虚拟方向键 */
+  .pad {
+    display: none;
+    margin-top: 18px;
+    grid-template-columns: repeat(3, 56px);
+    grid-template-rows: repeat(3, 56px);
+    gap: 6px;
+  }
+  .pad button {
+    background: rgba(168,85,247,0.18);
+    border: 1px solid rgba(168,85,247,0.45);
+    color: #c084fc;
+    font-size: 22px;
+    border-radius: 12px;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: all .12s ease;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.4), 0 4px 8px rgba(0,0,0,0.3);
+  }
+  .pad button:active {
+    background: rgba(168,85,247,0.5);
+    transform: translateY(2px);
+    box-shadow: 0 0 0 rgba(0,0,0,0.4);
+  }
+  .pad .empty { visibility: hidden; }
+
+  @media (max-width: 720px) {
+    .panel-side { width: 90vw; max-width: 400px; }
+    .snake-art { display: none; }
+  }
+  @media (max-width: 600px) {
+    h1 { font-size: 28px; letter-spacing: 4px; }
+    .songs { display: none; }
+    .pad { display: grid; }
+    .tips .desktop-only { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001s !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001s !important;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <img id="snakeArt" class="snake-art" alt="" draggable="false">
+
+  <h1>지민 <small>JIMIN · 贪吃蛇</small></h1>
+  <div class="songs">
+    <span>SERENDIPITY</span><span>LIE</span><span>FILTER</span><span>LIKE CRAZY</span><span>SET ME FREE</span><span>MUSE</span>
+  </div>
+  <div class="layout">
+    <div class="game-side">
+      <div class="info">
+        <span id="scoreBox">得分<b id="score">0</b></span>
+        <span>最高<b id="best">0</b></span>
+        <span>速度<b id="speed">1</b></span>
+        <span class="combo" id="comboBox" style="display:none;">连击<b id="combo">×1</b></span>
+      </div>
+      <div class="canvas-wrap" id="canvasWrap">
+        <canvas id="board" width="400" height="400"></canvas>
+        <img id="jiminPop" class="jimin-pop" alt="" draggable="false">
+        <button class="sound-btn" id="soundBtn" title="静音/开声">♪</button>
+      </div>
+      <div class="tips">
+        <span class="desktop-only"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> 或 <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> · <kbd>空格</kbd> 暂停 · <kbd>R</kbd> 重开 · <kbd>M</kbd> 静音</span>
+        <br>
+        <span class="hint">点击画布或按方向键开始 · 吃到金色 7 有惊喜</span>
+      </div>
+      <div class="borahae">💜 보라해</div>
+      <div class="pad">
+        <div class="empty"></div>
+        <button data-dir="up">▲</button>
+        <div class="empty"></div>
+        <button data-dir="left">◀</button>
+        <div class="empty"></div>
+        <button data-dir="right">▶</button>
+        <div class="empty"></div>
+        <button data-dir="down">▼</button>
+        <div class="empty"></div>
+      </div>
+    </div>
+    <div class="panel-side">
+      <div class="leaderboard">
+        <h2>A R M Y 榜</h2>
+        <div class="subtitle">JIMIN ARMY RANKING</div>
+        <ul class="lb-list" id="lbList"></ul>
+        <button class="lb-clear" id="lbClear">清空榜单</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-mask" id="modalMask">
+    <div class="modal">
+      <h3>登 上 ARMY 榜</h3>
+      <p>本次得分 <b id="modalScore">0</b> 分</p>
+      <input id="modalName" type="text" maxlength="12" placeholder="输入你的应援名">
+      <div class="modal-btns">
+        <button class="skip" id="modalSkip">跳过</button>
+        <button class="ok" id="modalOk">留名</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  // === 元素引用 ===
+  const canvas = document.getElementById('board');
+  const ctx = canvas.getContext('2d');
+  const canvasWrap = document.getElementById('canvasWrap');
+  const scoreEl = document.getElementById('score');
+  const scoreBox = document.getElementById('scoreBox');
+  const bestEl = document.getElementById('best');
+  const speedEl = document.getElementById('speed');
+  const comboBox = document.getElementById('comboBox');
+  const comboEl = document.getElementById('combo');
+  const soundBtn = document.getElementById('soundBtn');
+
+  // === 常量 ===
+  const LOGICAL_W = 400, LOGICAL_H = 400;
+  const GRID = 20;
+  const COLS = LOGICAL_W / GRID;
+  const ROWS = LOGICAL_H / GRID;
+  const BASE_INTERVAL = 150;
+  const MIN_INTERVAL = 60;
+  const LB_KEY = 'jimin_leaderboard_v1';
+  const BEST_KEY = 'jimin_snake_best';
+  const LB_MAX = 10;
+  const COMBO_WINDOW = 2000;
+  const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // === HiDPI canvas ===
+  function setupHiDPI() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = LOGICAL_W * dpr;
+    canvas.height = LOGICAL_H * dpr;
+    canvas.style.width = LOGICAL_W + 'px';
+    canvas.style.height = LOGICAL_H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  setupHiDPI();
+
+  // === 游戏状态 ===
+  let snake, dir, nextDir, food, score, best, interval, state;
+  let isNewRecord = false;
+  let stepAcc = 0;
+  let lastTime = 0;
+  let rafId = null;
+  let hitStopUntil = 0;
+  let shakeAmount = 0;
+  let shakeUntil = 0;
+  let combo = 1;
+  let lastEatTime = 0;
+  let foodPulse = 0;
+  let particles = [];
+  let floaters = [];
+  let trail = [];
+  let eatenCount = 0;
+  let sparkles = [];
+  let sparkleAcc = 0;
+
+  best = parseInt(localStorage.getItem(BEST_KEY) || '0', 10);
+  bestEl.textContent = best;
+
+  // === 音频系统(Web Audio 合成) ===
+  let audioCtx = null;
+  let muted = localStorage.getItem('jimin_snake_muted') === '1';
+  updateSoundIcon();
+  function ensureAudio() {
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch (e) { audioCtx = null; }
+    }
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  }
+  function tone(freq, dur, type = 'triangle', gain = 0.18, slideTo = null) {
+    if (muted || !audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, audioCtx.currentTime + dur);
+    g.gain.setValueAtTime(gain, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    osc.connect(g); g.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + dur);
+  }
+  function sfxEat() {
+    const base = 620 + combo * 70;
+    tone(base, 0.08, 'triangle', 0.22);
+    setTimeout(() => tone(base * 1.5, 0.06, 'sine', 0.16), 50);
+  }
+  function sfxBonus() {
+    [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, 0.1, 'triangle', 0.2), i * 60));
+  }
+  function sfxDeath() { tone(280, 0.4, 'sawtooth', 0.25, 90); }
+  function sfxMove() { tone(180, 0.025, 'square', 0.04); }
+  function sfxStart() { tone(440, 0.1, 'triangle', 0.18); setTimeout(()=>tone(660, 0.12, 'triangle', 0.18), 80); }
+  function updateSoundIcon() { soundBtn.textContent = muted ? '×' : '♪'; soundBtn.style.color = muted ? '#888' : '#c084fc'; }
+  soundBtn.addEventListener('click', () => {
+    muted = !muted;
+    localStorage.setItem('jimin_snake_muted', muted ? '1' : '0');
+    updateSoundIcon();
+    if (!muted) ensureAudio();
+  });
+
+  // === 排行榜 ===
+  const lbListEl = document.getElementById('lbList');
+  const lbClearBtn = document.getElementById('lbClear');
+  const modalMask = document.getElementById('modalMask');
+  const modalScore = document.getElementById('modalScore');
+  const modalName = document.getElementById('modalName');
+  const modalOk = document.getElementById('modalOk');
+  const modalSkip = document.getElementById('modalSkip');
+  let pendingScore = 0;
+
+  function loadLB() { try { return JSON.parse(localStorage.getItem(LB_KEY) || '[]'); } catch (e) { return []; } }
+  function saveLB(list) { localStorage.setItem(LB_KEY, JSON.stringify(list)); }
+  function isHighScore(s) {
+    const list = loadLB();
+    if (list.length < LB_MAX) return s > 0;
+    return s > (list[LB_MAX - 1]?.score || 0);
+  }
+  function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function renderLB(highlightIdx = -1) {
+    const list = loadLB().slice(0, LB_MAX);
+    if (!list.length) {
+      lbListEl.innerHTML = '<li class="lb-empty">尚无 ARMY 上榜<br>快来争夺榜首 💜</li>';
+      return;
+    }
+    lbListEl.innerHTML = list.map((item, i) => `
+      <li class="lb-row ${i === highlightIdx ? 'is-new' : ''}">
+        <span class="lb-rank">${i + 1}</span>
+        <span class="lb-name">${escapeHtml(item.name)}</span>
+        <span class="lb-score">${item.score}</span>
+      </li>`).join('');
+  }
+  function addScoreToLB(s) {
+    const list = loadLB();
+    list.push({ name: '匿名ARMY', score: s, ts: Date.now() });
+    list.sort((a, b) => b.score - a.score);
+    const top = list.slice(0, LB_MAX);
+    saveLB(top);
+    const idx = top.findIndex(x => x.score === s && x.name === '匿名ARMY');
+    renderLB(idx);
+  }
+  function promptName(s) {
+    pendingScore = s;
+    modalScore.textContent = s;
+    modalName.value = '';
+    modalMask.classList.add('show');
+    setTimeout(() => modalName.focus(), 60);
+  }
+  function closeModal(useName) {
+    modalMask.classList.remove('show');
+    const name = useName ? (modalName.value.trim() || '匿名ARMY') : '匿名ARMY';
+    const list = loadLB();
+    const idx = list.findIndex(x => x.score === pendingScore && x.name === '匿名ARMY');
+    if (idx >= 0) {
+      list[idx].name = name.slice(0, 12);
+      saveLB(list);
+      renderLB(idx);
+    }
+  }
+  modalOk.addEventListener('click', () => closeModal(true));
+  modalSkip.addEventListener('click', () => closeModal(false));
+  modalName.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') closeModal(true);
+    else if (e.key === 'Escape') closeModal(false);
+  });
+  lbClearBtn.addEventListener('click', () => {
+    if (confirm('确定清空 ARMY 榜所有记录?')) { saveLB([]); renderLB(); }
+  });
+  renderLB();
+
+  // === 游戏核心 ===
+  function reset() {
+    snake = [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }];
+    dir = { x: 1, y: 0 };
+    nextDir = dir;
+    score = 0;
+    interval = BASE_INTERVAL;
+    state = 'idle';
+    combo = 1;
+    isNewRecord = false;
+    lastEatTime = 0;
+    stepAcc = 0;
+    hitStopUntil = 0;
+    shakeAmount = 0;
+    eatenCount = 0;
+    particles = [];
+    floaters = [];
+    trail = [];
+    sparkles = [];
+    sparkleAcc = 0;
+    canvasWrap.classList.remove('paused', 'over');
+    placeFood();
+    updateHUD();
+    updateComboHUD();
+    draw();
+  }
+
+  function placeFood() {
+    // 每吃 5 个出现一次金色 "7" 奖励食物
+    const bonus = eatenCount > 0 && eatenCount % 5 === 0;
+    while (true) {
+      const fx = Math.floor(Math.random() * COLS);
+      const fy = Math.floor(Math.random() * ROWS);
+      if (!snake.some(s => s.x === fx && s.y === fy)) {
+        food = { x: fx, y: fy, bonus };
+        return;
+      }
+    }
+  }
+
+  function updateHUD() {
+    scoreEl.textContent = score;
+    bestEl.textContent = best;
+    const lvl = Math.floor((BASE_INTERVAL - interval) / 10) + 1;
+    speedEl.textContent = lvl;
+  }
+
+  function updateComboHUD() {
+    if (combo > 1) {
+      comboBox.style.display = 'inline-block';
+      comboEl.textContent = '×' + combo;
+    } else {
+      comboBox.style.display = 'none';
+    }
+  }
+
+  function pulseScore() {
+    scoreBox.classList.remove('pulse');
+    void scoreBox.offsetWidth;
+    scoreBox.classList.add('pulse');
+  }
+
+  function step() {
+    dir = nextDir;
+    const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+
+    // 撞墙
+    if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) {
+      return gameOver();
+    }
+    // 撞自身
+    if (snake.some(s => s.x === head.x && s.y === head.y)) {
+      return gameOver();
+    }
+
+    snake.unshift(head);
+
+    if (head.x === food.x && head.y === food.y) {
+      // 连击系统
+      const now = performance.now();
+      if (now - lastEatTime < COMBO_WINDOW) combo = Math.min(combo + 1, 5);
+      else combo = 1;
+      lastEatTime = now;
+
+      eatenCount++;
+      const gain = (food.bonus ? 30 : 10) * combo;
+      score += gain;
+      if (score > best) {
+        best = score;
+        localStorage.setItem(BEST_KEY, best);
+      }
+      interval = Math.max(MIN_INTERVAL, BASE_INTERVAL - Math.floor(score / 50) * 10);
+
+      const cx = food.x * GRID + GRID/2;
+      const cy = food.y * GRID + GRID/2;
+      // 浮动 +分数
+      spawnFloater(cx, cy - 12, '+' + gain, false);
+      if (!food.bonus && combo >= 3) spawnFloater(cx, cy + 12, '보라해!', true);
+      // 粒子爆炸
+      if (food.bonus) {
+        spawnParticles(cx, cy, 16, '#ffd166');
+        spawnParticles(cx, cy, 8, '#fff7e0');
+        sfxBonus();
+      } else {
+        spawnParticles(cx, cy, 10, '#22d3ee');
+        spawnParticles(cx, cy, 6, '#a855f7');
+        sfxEat();
+      }
+      // 食物脉冲
+      foodPulse = 1;
+      showJiminPop(cx, cy);
+      pulseScore();
+      updateHUD();
+      updateComboHUD();
+      placeFood();
+    } else {
+      snake.pop();
+    }
+  }
+
+  // === 主循环 (rAF + delta time) ===
+  function loop(t) {
+    if (!lastTime) lastTime = t;
+    const dt = Math.min(t - lastTime, 100);
+    lastTime = t;
+
+    if (state === 'running' && t >= hitStopUntil) {
+      stepAcc += dt;
+      while (stepAcc >= interval) {
+        step();
+        stepAcc -= interval;
+        if (state !== 'running') break;
+      }
+    }
+
+    // 食物脉冲衰减
+    if (foodPulse > 0) foodPulse = Math.max(0, foodPulse - dt / 400);
+
+    // 粒子更新
+    particles = particles.filter(p => {
+      p.life -= dt;
+      p.x += p.vx * dt / 16;
+      p.y += p.vy * dt / 16;
+      p.vy += 0.15 * dt / 16;
+      p.vx *= 0.96;
+      return p.life > 0;
+    });
+
+    // 浮字更新
+    floaters = floaters.filter(f => {
+      f.life -= dt;
+      f.y -= 0.04 * dt;
+      return f.life > 0;
+    });
+
+    // 残影衰减
+    trail = trail.filter(tr => {
+      tr.life -= dt;
+      return tr.life > 0;
+    });
+
+    // 屏幕震动衰减
+    if (shakeAmount > 0) {
+      shakeAmount = Math.max(0, shakeAmount - dt / 20);
+      if (shakeAmount < 0.1) shakeAmount = 0;
+    }
+
+    // 残影采样 + 细碎闪光粒子
+    if (state === 'running' && snake.length) {
+      trail.push({ x: snake[0].x, y: snake[0].y, life: 220, maxLife: 220 });
+      sparkleAcc += dt;
+      if (sparkleAcc > 260) {
+        sparkleAcc = 0;
+        const seg = snake[Math.floor(Math.random() * snake.length)];
+        sparkles.push({
+          x: seg.x * GRID + 4 + Math.random() * (GRID - 8),
+          y: seg.y * GRID + 4 + Math.random() * (GRID - 8),
+          life: 450, maxLife: 450,
+          size: 1.5 + Math.random() * 1.8
+        });
+      }
+    }
+
+    // 闪光粒子更新
+    sparkles = sparkles.filter(sp => {
+      sp.life -= dt;
+      return sp.life > 0;
+    });
+
+    draw();
+    rafId = requestAnimationFrame(loop);
+  }
+
+  // === Juice 系统 ===
+  function spawnParticles(x, y, count, color) {
+    if (REDUCED_MOTION) return;
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const s = 1.5 + Math.random() * 3;
+      particles.push({
+        x, y,
+        vx: Math.cos(a) * s,
+        vy: Math.sin(a) * s - 1,
+        life: 500 + Math.random() * 300,
+        maxLife: 700,
+        color,
+        size: 2 + Math.random() * 2
+      });
+    }
+  }
+  function spawnFloater(x, y, text, pink) {
+    floaters.push({ x, y, text, pink, life: 700, maxLife: 700 });
+  }
+  function triggerShake(amount) {
+    if (REDUCED_MOTION) return;
+    shakeAmount = amount;
+    shakeUntil = performance.now() + 300;
+  }
+
+  // === 绘制 ===
+  function draw() {
+    const sx = shakeAmount ? (Math.random() - 0.5) * shakeAmount : 0;
+    const sy = shakeAmount ? (Math.random() - 0.5) * shakeAmount : 0;
+
+    ctx.save();
+    ctx.translate(sx, sy);
+
+    // 背景: 深紫黑夜色
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, LOGICAL_H);
+    bgGrad.addColorStop(0, '#140826');
+    bgGrad.addColorStop(0.5, '#0d0517');
+    bgGrad.addColorStop(1, '#06020c');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(-10, -10, LOGICAL_W + 20, LOGICAL_H + 20);
+
+    // 舞台聚光 (微弱的紫色光晕)
+    const spot = ctx.createRadialGradient(LOGICAL_W/2, LOGICAL_H/2, 30, LOGICAL_W/2, LOGICAL_H/2, LOGICAL_W * 0.72);
+    spot.addColorStop(0, 'rgba(147,51,234,0.10)');
+    spot.addColorStop(1, 'rgba(147,51,234,0)');
+    ctx.fillStyle = spot;
+    ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
+
+    // 网格
+    ctx.strokeStyle = 'rgba(56,189,248,0.06)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < COLS; i++) {
+      ctx.beginPath(); ctx.moveTo(i * GRID, 0); ctx.lineTo(i * GRID, LOGICAL_H); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i * GRID); ctx.lineTo(LOGICAL_W, i * GRID); ctx.stroke();
+    }
+
+    // 蛇身残影
+    trail.forEach(tr => {
+      const alpha = (tr.life / tr.maxLife) * 0.22;
+      ctx.fillStyle = `rgba(125,211,252,${alpha})`;
+      roundRect(ctx, tr.x * GRID + 2, tr.y * GRID + 2, GRID - 4, GRID - 4, 5);
+      ctx.fill();
+    });
+
+    // 食物(紫心 보라해 / 金色 7 + 脉冲)
+    const pulse = 1 + Math.sin(performance.now() / 200) * 0.08 + foodPulse * 0.4;
+    const fx = food.x * GRID + GRID / 2;
+    const fy = food.y * GRID + GRID / 2;
+
+    const glowColor = food.bonus ? '255,209,102' : '192,132,252';
+    const glow = ctx.createRadialGradient(fx, fy, 2, fx, fy, GRID * 1.3);
+    glow.addColorStop(0, `rgba(${glowColor},${0.55 + foodPulse * 0.3})`);
+    glow.addColorStop(1, `rgba(${glowColor},0)`);
+    ctx.fillStyle = glow;
+    ctx.fillRect(food.x * GRID - GRID, food.y * GRID - GRID, GRID * 3, GRID * 3);
+
+    if (food.bonus) {
+      ctx.font = `900 ${Math.round(19 * pulse)}px "Orbitron", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#ffd166';
+      ctx.shadowColor = 'rgba(255,209,102,0.95)';
+      ctx.shadowBlur = 16;
+      ctx.fillText('7', fx, fy + 1);
+      ctx.shadowBlur = 0;
+    } else {
+      drawHeart(fx, fy, 8.5 * pulse);
+    }
+
+    // 蛇身 (青→紫→蓝霓虹渐变 + 发光)
+    snake.forEach((s, i) => {
+      const isHead = i === 0;
+      const t = i / Math.max(1, snake.length - 1);
+      const c = t < 0.5
+        ? mix3([34, 211, 238], [168, 85, 247], t * 2)
+        : mix3([168, 85, 247], [79, 124, 255], (t - 0.5) * 2);
+      ctx.fillStyle = isHead ? '#d9fbff' : `rgb(${c[0]},${c[1]},${c[2]})`;
+      ctx.shadowColor = isHead ? 'rgba(34,211,238,0.9)' : `rgba(${c[0]},${c[1]},${c[2]},0.8)`;
+      ctx.shadowBlur = isHead ? 15 : 8;
+      roundRect(ctx, s.x * GRID + 1, s.y * GRID + 1, GRID - 2, GRID - 2, 5);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = 'rgba(6,16,36,0.9)';
+      ctx.lineWidth = 1.2;
+      roundRect(ctx, s.x * GRID + 1, s.y * GRID + 1, GRID - 2, GRID - 2, 5);
+      ctx.stroke();
+
+      if (isHead) {
+        // 发光粉紫眼睛
+        const cx = s.x * GRID + GRID / 2;
+        const cy = s.y * GRID + GRID / 2;
+        const ex = dir.x * 3, ey = dir.y * 3;
+        const perpX = -dir.y, perpY = dir.x;
+        ctx.fillStyle = '#ff6ec7';
+        ctx.shadowColor = 'rgba(255,110,199,0.95)';
+        ctx.shadowBlur = 7;
+        ctx.beginPath();
+        ctx.arc(cx + ex + perpX * 3, cy + ey + perpY * 3, 2.2, 0, Math.PI * 2);
+        ctx.arc(cx + ex - perpX * 3, cy + ey - perpY * 3, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+    });
+
+    // 细碎闪光粒子(菱形星屑)
+    sparkles.forEach(sp => {
+      const a = sp.life / sp.maxLife;
+      const tw = 0.5 + 0.5 * Math.sin(performance.now() / 30 + sp.x * 3);
+      ctx.globalAlpha = a * tw;
+      ctx.fillStyle = '#e0faff';
+      ctx.shadowColor = 'rgba(34,211,238,0.9)';
+      ctx.shadowBlur = 6;
+      ctx.save();
+      ctx.translate(sp.x, sp.y);
+      ctx.rotate(Math.PI / 4);
+      ctx.fillRect(-sp.size, -sp.size, sp.size * 2, sp.size * 2);
+      ctx.restore();
+      ctx.shadowBlur = 0;
+    });
+    ctx.globalAlpha = 1;
+
+    // 粒子
+    particles.forEach(p => {
+      const a = p.life / p.maxLife;
+      ctx.globalAlpha = a;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * a, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+
+    // 浮动文字
+    floaters.forEach(f => {
+      const a = f.life / f.maxLife;
+      ctx.globalAlpha = a;
+      ctx.fillStyle = f.pink ? '#ff6ec7' : '#e9d5ff';
+      ctx.font = f.pink
+        ? '700 13px "Black Han Sans","Noto Sans SC",sans-serif'
+        : 'bold 17px "Orbitron","Noto Sans SC",sans-serif';
+      ctx.textAlign = 'center';
+      ctx.shadowColor = 'rgba(0,0,0,0.8)';
+      ctx.shadowBlur = 4;
+      ctx.fillText(f.text, f.x, f.y);
+      ctx.shadowBlur = 0;
+    });
+    ctx.globalAlpha = 1;
+
+    ctx.restore();
+
+    // 状态覆盖层
+    if (state !== 'running') {
+      ctx.fillStyle = state === 'over' ? 'rgba(2,0,8,0.74)' : 'rgba(2,0,8,0.55)';
+      ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = '700 25px "Orbitron","Noto Sans SC",sans-serif';
+      ctx.fillStyle = '#c084fc';
+      let msg = '';
+      let sub = '';
+      if (state === 'idle') { msg = 'SERENDIPITY'; sub = '按方向键开始 · 보라해 💜'; }
+      else if (state === 'paused') { msg = 'FILTER · 暂停'; sub = '按空格继续'; }
+      else if (state === 'over') { msg = 'SET ME FREE'; sub = `败北 ${score} 分 · 按 R 重来`; }
+      ctx.shadowColor = 'rgba(168,85,247,0.9)';
+      ctx.shadowBlur = 16;
+      ctx.fillText(msg, LOGICAL_W / 2, LOGICAL_H / 2 - 14);
+      ctx.shadowBlur = 0;
+      ctx.font = '14px "Noto Sans SC","Microsoft YaHei",sans-serif';
+      ctx.fillStyle = 'rgba(240,171,252,0.9)';
+      ctx.fillText(sub, LOGICAL_W / 2, LOGICAL_H / 2 + 18);
+
+      // 新纪录徽章
+      if (state === 'over' && isNewRecord) {
+        const t = performance.now() / 200;
+        const pulse2 = 1 + Math.sin(t) * 0.08;
+        ctx.save();
+        ctx.translate(LOGICAL_W / 2, LOGICAL_H / 2 - 58);
+        ctx.scale(pulse2, pulse2);
+        ctx.rotate(-0.06);
+        ctx.fillStyle = 'rgba(255,209,102,0.15)';
+        ctx.fillRect(-58, -16, 116, 32);
+        ctx.strokeStyle = '#ffd166';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-58, -16, 116, 32);
+        ctx.font = '800 14px "Orbitron", sans-serif';
+        ctx.fillStyle = '#ffd166';
+        ctx.shadowColor = 'rgba(255,209,102,0.9)';
+        ctx.shadowBlur = 10;
+        ctx.fillText('★ NEW RECORD ★', 0, 5);
+        ctx.restore();
+      }
+    }
+  }
+
+  function drawHeart(x, y, s) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.beginPath();
+    ctx.moveTo(0, s * 0.9);
+    ctx.bezierCurveTo(-s * 1.1, s * 0.1, -s * 0.6, -s * 0.9, 0, -s * 0.3);
+    ctx.bezierCurveTo(s * 0.6, -s * 0.9, s * 1.1, s * 0.1, 0, s * 0.9);
+    ctx.closePath();
+    const hg = ctx.createLinearGradient(0, -s, 0, s);
+    hg.addColorStop(0, '#f0abfc');
+    hg.addColorStop(1, '#a855f7');
+    ctx.fillStyle = hg;
+    ctx.shadowColor = 'rgba(217,70,239,0.9)';
+    ctx.shadowBlur = 13;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.beginPath();
+    ctx.arc(-s * 0.32, -s * 0.18, s * 0.14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  // 三段色值线性插值
+  function mix3(a, b, t) {
+    return [
+      Math.round(a[0] + (b[0] - a[0]) * t),
+      Math.round(a[1] + (b[1] - a[1]) * t),
+      Math.round(a[2] + (b[2] - a[2]) * t)
+    ];
+  }
+
+  // === 状态控制 ===
+  function start() {
+    if (state === 'running') return;
+    if (state === 'over') reset();
+    state = 'running';
+    canvasWrap.classList.remove('paused', 'over');
+    lastTime = 0;
+    stepAcc = 0;
+    ensureAudio();
+    sfxStart();
+  }
+  function pause() {
+    if (state !== 'running') return;
+    state = 'paused';
+    canvasWrap.classList.add('paused');
+  }
+  function togglePause() {
+    if (state === 'running') pause();
+    else if (state === 'paused' || state === 'idle') start();
+  }
+  function gameOver() {
+    state = 'over';
+    canvasWrap.classList.add('over');
+    isNewRecord = score > best && score > 0;
+    if (score > best) {
+      best = score;
+      localStorage.setItem(BEST_KEY, best);
+    }
+    // 死亡 juice
+    hitStopUntil = performance.now() + 100;
+    triggerShake(8);
+    const head = snake[0];
+    spawnParticles(head.x * GRID + GRID/2, head.y * GRID + GRID/2, 16, '#a855f7');
+    spawnParticles(head.x * GRID + GRID/2, head.y * GRID + GRID/2, 10, '#ec4899');
+    spawnParticles(head.x * GRID + GRID/2, head.y * GRID + GRID/2, 6, '#ffffff');
+    sfxDeath();
+    updateHUD();
+    if (score > 0 && isHighScore(score)) {
+      addScoreToLB(score);
+      setTimeout(() => promptName(score), 500);
+    }
+  }
+  function setDir(d) {
+    const map = { up:{x:0,y:-1}, down:{x:0,y:1}, left:{x:-1,y:0}, right:{x:1,y:0} };
+    const nd = map[d];
+    if (!nd) return;
+    if (nd.x === -dir.x && nd.y === -dir.y) return;
+    nextDir = nd;
+    if (state === 'idle' || state === 'paused') start();
+    else if (state === 'running') sfxMove();
+  }
+
+  // === 输入 ===
+  document.addEventListener('keydown', (e) => {
+    const k = e.key.toLowerCase();
+    if (['arrowup','arrowdown','arrowleft','arrowright',' '].includes(e.key.toLowerCase()) ||
+        ['w','a','s','d',' '].includes(k)) e.preventDefault();
+    if (k === 'arrowup' || k === 'w') setDir('up');
+    else if (k === 'arrowdown' || k === 's') setDir('down');
+    else if (k === 'arrowleft' || k === 'a') setDir('left');
+    else if (k === 'arrowright' || k === 'd') setDir('right');
+    else if (k === ' ') togglePause();
+    else if (k === 'r') reset();
+    else if (k === 'm') soundBtn.click();
+  });
+
+  let touchStart = null;
+  canvas.addEventListener('touchstart', (e) => {
+    touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    if (state === 'idle' || state === 'over') start();
+  }, { passive: true });
+  canvas.addEventListener('touchmove', (e) => {
+    if (!touchStart) return;
+    const dx = e.touches[0].clientX - touchStart.x;
+    const dy = e.touches[0].clientY - touchStart.y;
+    if (Math.abs(dx) < 20 && Math.abs(dy) < 20) return;
+    if (Math.abs(dx) > Math.abs(dy)) setDir(dx > 0 ? 'right' : 'left');
+    else setDir(dy > 0 ? 'down' : 'up');
+    touchStart = null;
+  }, { passive: true });
+
+  document.querySelectorAll('.pad button[data-dir]').forEach(btn => {
+    btn.addEventListener('click', () => setDir(btn.dataset.dir));
+  });
+
+  canvas.addEventListener('click', () => {
+    if (state === 'idle') start();
+    else if (state === 'over') { reset(); start(); }
+    else togglePause();
+  });
+
+  // Tab 隐藏自动暂停
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && state === 'running') pause();
+  });
+
+  // === 素材装饰图加载(素材生成完成后自动浮现) ===
+  const artImg = document.getElementById('snakeArt');
+  function tryLoadArt() {
+    const probe = new Image();
+    probe.onload = () => { artImg.src = probe.src; artImg.classList.add('ready'); };
+    probe.onerror = () => setTimeout(tryLoadArt, 15000);
+    probe.src = 'snake-asset.png?r=' + Date.now();
+  }
+  tryLoadArt();
+
+  // === 朴智旻贴纸(吃到食物时弹出) ===
+  const popImg = document.getElementById('jiminPop');
+  let popReady = false;
+  (function tryLoadPop() {
+    const probe = new Image();
+    probe.onload = () => { popImg.src = probe.src; popReady = true; };
+    probe.onerror = () => setTimeout(tryLoadPop, 15000);
+    probe.src = 'jimin-sticker.png?r=' + Date.now();
+  })();
+  function showJiminPop(x, y) {
+    if (!popReady) return;
+    popImg.style.left = (x + 3) + 'px';
+    popImg.style.top = (y + 3) + 'px';
+    popImg.classList.remove('show');
+    void popImg.offsetWidth;
+    popImg.classList.add('show');
+  }
+
+  // 启动
+  reset();
+  rafId = requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

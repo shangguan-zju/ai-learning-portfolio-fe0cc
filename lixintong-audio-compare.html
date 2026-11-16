@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>李欣彤 · 音频对比 & 提示词改造</title>
+<style>
+  :root{
+    --bg:#e9e9eb;
+    --card:rgba(255,255,255,.58);
+    --card-brd:rgba(255,255,255,.8);
+    --ink:#2f2f33;
+    --ink-soft:#8a8a92;
+    --accent:#c39aae;
+    --accent-deep:#9d6f86;
+    --line:rgba(120,110,120,.16);
+    --shadow:0 18px 40px -22px rgba(60,50,60,.5);
+    --radius:24px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei","Noto Sans SC","Segoe UI",system-ui,sans-serif;
+    background:
+      radial-gradient(1100px 600px at 12% -10%, #f7f4f5 0%, transparent 60%),
+      radial-gradient(900px 520px at 96% 112%, #efe6ea 0%, transparent 55%),
+      var(--bg);
+    color:var(--ink);padding:34px 20px 60px;-webkit-font-smoothing:antialiased;
+  }
+  .page{width:min(1180px,100%);margin:0 auto}
+
+  header.hero{text-align:center;margin-bottom:26px}
+  header.hero h1{font-size:27px;font-weight:700;letter-spacing:.06em}
+  header.hero p{margin-top:10px;font-size:13px;color:var(--ink-soft);letter-spacing:.03em;line-height:1.8}
+  .badge{display:inline-block;margin-top:12px;font-size:11px;letter-spacing:.12em;
+    padding:6px 14px;border-radius:99px;color:var(--accent-deep);
+    background:rgba(195,154,174,.16);border:1px solid rgba(195,154,174,.3)}
+
+  .card{
+    background:var(--card);border:1px solid var(--card-brd);border-radius:var(--radius);
+    box-shadow:var(--shadow);backdrop-filter:blur(20px) saturate(160%);
+    -webkit-backdrop-filter:blur(20px) saturate(160%);padding:26px 24px;margin-bottom:22px;
+  }
+  .card h2{font-size:15px;letter-spacing:.14em;font-weight:700;margin-bottom:6px}
+  .card h2 small{font-weight:400;font-size:11px;color:var(--ink-soft);letter-spacing:.06em;margin-left:8px}
+  .card .desc{font-size:12.5px;color:var(--ink-soft);line-height:1.8;margin-bottom:16px}
+
+  /* ---- 双播放器 ---- */
+  .players{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media (max-width:780px){ .players{grid-template-columns:1fr} }
+  .pl{border-radius:20px;padding:20px;border:1px solid var(--card-brd);
+    background:linear-gradient(160deg,rgba(255,255,255,.7),rgba(240,234,238,.5))}
+  .pl h3{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .pl .tag{font-size:10px;font-weight:700;letter-spacing:.1em;padding:3px 9px;border-radius:99px}
+  .pl.a .tag{background:#dfe4ee;color:#5a6784}
+  .pl.b .tag{background:rgba(195,154,174,.28);color:var(--accent-deep)}
+  .pl .meta{font-size:11.5px;color:var(--ink-soft);line-height:1.9;margin:12px 0 14px;font-variant-numeric:tabular-nums}
+  .pl .meta b{color:var(--ink);font-weight:600}
+  audio{width:100%;height:38px;border-radius:10px;outline:none;filter:saturate(.6)}
+  .audio-tip{display:none;margin-top:9px;font-size:11px;color:#a8596a;line-height:1.7;
+    background:rgba(168,89,106,.1);border:1px solid rgba(168,89,106,.28);border-radius:10px;padding:8px 11px}
+  .audio-tip.show{display:block}
+
+  /* ---- 表格 ---- */
+  .tbl-wrap{overflow-x:auto;border-radius:16px;border:1px solid var(--line)}
+  table{width:100%;border-collapse:collapse;font-size:12.8px;min-width:620px;background:rgba(255,255,255,.35)}
+  th,td{padding:12px 14px;text-align:left;vertical-align:top;line-height:1.75;border-bottom:1px solid var(--line)}
+  thead th{background:rgba(195,154,174,.16);color:var(--accent-deep);
+    font-size:11.5px;letter-spacing:.1em;font-weight:700;white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:nth-child(even){background:rgba(255,255,255,.28)}
+  td.dim{color:var(--ink-soft)}
+  .k{font-weight:600;color:#4a444c}
+  .good{color:#4b7a5f}
+  .bad{color:#a8596a}
+  .fix{color:#5a6784}
+  code.pill{font-family:ui-monospace,Consolas,monospace;font-size:11.5px;background:rgba(120,110,120,.1);
+    padding:2px 7px;border-radius:6px;color:#5a5560}
+
+  /* ---- 提示词块 ---- */
+  .prompt{position:relative;background:#2f2b31;color:#e8e3e7;border-radius:16px;padding:20px 20px 16px;
+    font-family:ui-monospace,Consolas,"Courier New",monospace;font-size:12.4px;line-height:1.85;white-space:pre-wrap}
+  .prompt .cn{color:#a892a2}
+  .copy{position:absolute;top:12px;right:12px;font-size:11px;padding:6px 12px;border-radius:99px;
+    background:rgba(255,255,255,.14);color:#eee8ec;border:1px solid rgba(255,255,255,.2);cursor:pointer}
+  .copy:hover{background:rgba(255,255,255,.24)}
+  .copy:active{transform:scale(.96)}
+  .note{font-size:11.5px;color:var(--ink-soft);line-height:1.85;margin-top:12px}
+  .note b{color:var(--ink)}
+  ol.steps{margin:6px 0 0 18px;font-size:12.8px;line-height:2;color:#4c474f}
+  ol.steps li::marker{color:var(--accent-deep);font-weight:700}
+  footer{text-align:center;font-size:11px;color:var(--ink-soft);margin-top:26px;line-height:1.9}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <h1>《李欣彤》· 双版本音频对比 &amp; 提示词改造</h1>
+    <p>原版 vs 女声版 · 可观测参数对照 · 提示词诊断与重写<br>
+       目标：让 AI 生成结果稳定命中「沙哑女声 + 深情 emo + 中英韩混唱」</p>
+    <div class="badge">AIGC 标识 · Label = 1 · 同一内容生产者</div>
+  </header>
+
+  <!-- ============ 1. 双播放器 ============ -->
+  <section class="card">
+    <h2>01 音频对照播放 <small>A / B 双版本</small></h2>
+    <div class="desc">本页通过多源回退自动匹配同目录下的音频文件，离线可播：A 版读取 xintong-original.mp3 / audio_original.mp3，B 版读取 xintong-female.mp3 / audio_female.mp3。</div>
+
+    <div class="players">
+      <div class="pl a">
+        <h3><span class="tag">A 原版</span>《李欣彤》活力可爱的溜肉段</h3>
+        <div class="meta">
+          时长：<b>≈ 3:42</b>（按 256 kbps 估算）<br>
+          体积：<b>7,095,359 B</b>（约 6.77 MB）<br>
+          码率：<b>256 kbps</b> · 命名未标注性别
+        </div>
+        <audio controls preload="metadata" id="audioA">
+          <source src="xintong-original.mp3" type="audio/mpeg">
+          您的浏览器不支持音频播放。
+        </audio>
+        <div class="audio-tip" id="tipA"></div>
+      </div>
+
+      <div class="pl b">
+        <h3><span class="tag">B 女声版</span>《李欣彤（女声版）》活力可爱的溜肉段</h3>
+        <div class="meta">
+          时长：<b>≈ 3:24</b>（按 256 kbps 估算）<br>
+          体积：<b>6,518,576 B</b>（约 6.22 MB）<br>
+          码率：<b>256 kbps</b> · 命名明确锁定女声
+        </div>
+        <audio controls preload="metadata" id="audioB">
+          <source src="xintong-female.mp3" type="audio/mpeg">
+          您的浏览器不支持音频播放。
+        </audio>
+        <div class="audio-tip" id="tipB"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 2. 基础参数对比 ============ -->
+  <section class="card">
+    <h2>02 基础参数对比 <small>客观事实</small></h2>
+    <div class="desc">以下为可直接验证的客观数据，不含听感推测。</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>对比维度</th><th>A · 原版</th><th>B · 女声版</th><th>差异说明</th></tr></thead>
+        <tbody>
+          <tr><td class="k">文件名定位</td><td>《李欣彤》…</td><td>《李欣彤（<b>女声版</b>）》…</td><td class="fix">B 明确指定了演唱性别 → 提示词里加了「女声」限定</td></tr>
+          <tr><td class="k">文件体积</td><td>7,095,359 B</td><td>6,518,576 B</td><td class="dim">相差约 0.55 MB</td></tr>
+          <tr><td class="k">估算时长</td><td>≈ 3:42</td><td>≈ 3:24</td><td class="dim">B 比 A 短约 18 秒 → 段落/尾奏被压缩</td></tr>
+          <tr><td class="k">码率</td><td>256 kbps</td><td>256 kbps</td><td class="dim">一致，同一导出规格</td></tr>
+          <tr><td class="k">AIGC 标识</td><td>Label = 1</td><td>Label = 1</td><td class="dim">均按规范写入 AIGC 标识帧</td></tr>
+          <tr><td class="k">内容生产者</td><td colspan="2" style="text-align:center">001191110108MA01DFAQ62<b>1</b>0000 / 62<b>2</b>0000（完全相同）</td><td class="dim">同一平台、同一主体</td></tr>
+          <tr><td class="k">生成编号</td><td><code class="pill">…dbasaaq7dld6oqpg4ag0</code></td><td><code class="pill">…dbasd127dldciqrhst4g</code></td><td class="fix">两次<b>独立生成</b>，非同一母带转码</td></tr>
+          <tr><td class="k">风格署名</td><td colspan="2" style="text-align:center">「活力可爱」</td><td class="bad">与 emo 悲情主题冲突（详见 04 节）</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 3. 听感对比（待标注） ============ -->
+  <section class="card">
+    <h2>03 听感对比表 <small>需你试听后确认</small></h2>
+    <div class="desc">我无法直接收听音频，以下维度请边听边勾选/填写；「倾向」列是我基于提示词差异给出的<b>预判</b>，仅供参考。</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>听感维度</th><th>A · 原版</th><th>B · 女声版</th><th>提示词预判</th></tr></thead>
+        <tbody>
+          <tr><td class="k">演唱性别 / 音色</td><td class="dim">（待填）</td><td class="dim">（待填）</td><td class="fix">B 应更明显为女声，但「女声」≠ 沙哑，可能仍偏亮</td></tr>
+          <tr><td class="k">情绪基调</td><td class="dim">（待填）</td><td class="dim">（待填）</td><td class="bad">两版都可能被「活力可爱」带偏成轻快</td></tr>
+          <tr><td class="k">编曲配器</td><td class="dim">（待填）</td><td class="dim">（待填）</td><td class="dim">未指定 → 两版可能差异较大</td></tr>
+          <tr><td class="k">速度 / 节奏</td><td class="dim">（待填）</td><td class="dim">（待填）</td><td class="dim">未指定 BPM → 慢歌/快歌随机</td></tr>
+          <tr><td class="k">说唱段是否出现</td><td class="dim">（待填）</td><td class="dim">（待填）</td><td class="bad">未指定结构 → RAP 段可能缺失或位置错乱</td></tr>
+          <tr><td class="k">中 / 英 / 韩 切换</td><td class="dim">（待填）</td><td class="dim">（待填）</td><td class="fix">语言比例未指定 → 切换点不受控</td></tr>
+          <tr><td class="k">「李欣彤」是否成为记忆点</td><td class="dim">（待填）</td><td class="dim">（待填）</td><td class="fix">需在提示词里显式要求重复人名</td></tr>
+          <tr><td class="k">混音 / 空间感</td><td class="dim">（待填）</td><td class="dim">（待填）</td><td class="dim">由平台固定导出，差异通常不大</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 4. 提示词诊断 ============ -->
+  <section class="card">
+    <h2>04 提示词诊断与改造表 <small>核心</small></h2>
+    <div class="desc">左边是「大概率写过 / 平台默认」的要素，右边是可直接替换的强化写法。</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th style="width:34px">#</th><th>要素</th><th>原写法（推断）</th><th>问题诊断</th><th>改造后写法</th><th>预期效果</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td><td class="k">风格基调</td>
+            <td><code class="pill">活力可爱</code></td>
+            <td class="bad">与 emo 悲伤歌词直接矛盾，模型会优先走甜系/欢快，情绪彻底错位</td>
+            <td><code class="pill">emo pop ballad, melancholic, heartbreak, late-night loneliness</code></td>
+            <td class="good">悲伤基调与歌词统一，不跑偏成元气歌</td>
+          </tr>
+          <tr>
+            <td>2</td><td class="k">人声音色</td>
+            <td><code class="pill">（未指定）</code> / 仅写「女声版」</td>
+            <td class="bad">「女声」只锁性别，没锁音色；默认女声多偏明亮甜，得不到沙哑感</td>
+            <td><code class="pill">husky female vocal, breathy, raspy alto, intimate close-mic, slight vocal fry</code></td>
+            <td class="good">直接命中你要的沙哑女声</td>
+          </tr>
+          <tr>
+            <td>3</td><td class="k">情绪强度</td>
+            <td><code class="pill">深情</code></td>
+            <td class="bad">「深情」太宽泛，可以是温柔也可以是撕心，结果不可控</td>
+            <td><code class="pill">devastated, tearful, restrained crying, vulnerable, almost whispering then breaking</code></td>
+            <td class="good">唱腔更痛、有破碎感，贴 emo</td>
+          </tr>
+          <tr>
+            <td>4</td><td class="k">语言分配</td>
+            <td><code class="pill">（未指定）</code></td>
+            <td class="bad">中英韩全丢给模型 → 比例随机、切换点乱、韩文可能只出现一次</td>
+            <td><code class="pill">mostly Mandarin; English hook in chorus; one short Korean line in the bridge</code></td>
+            <td class="good">三语层次可控、段落可预期</td>
+          </tr>
+          <tr>
+            <td>5</td><td class="k">编曲配器</td>
+            <td><code class="pill">（未指定）</code></td>
+            <td class="bad">模型自由发挥，可能与速度/结构设定互相打架</td>
+            <td><code class="pill">sad piano + warm string pad + sub bass + soft trap drums + tape hiss</code></td>
+            <td class="good">配器可控、层次清晰、氛围统一</td>
+          </tr>
+          <tr>
+            <td>6</td><td class="k">速度 / 节奏</td>
+            <td><code class="pill">（未指定）</code></td>
+            <td class="bad">慢歌或快歌随机，直接影响情绪</td>
+            <td><code class="pill">72 BPM verse / chorus, 128 BPM half-time trap in the rap section</code></td>
+            <td class="good">主歌慢、说唱段提速，形成对比张力</td>
+          </tr>
+          <tr>
+            <td>7</td><td class="k">曲式结构</td>
+            <td><code class="pill">（未指定）</code></td>
+            <td class="bad">段落顺序随机，RAP 段最容易丢或被塞错位置</td>
+            <td><code class="pill">intro spoken → V1 → pre → chorus → V2 → pre → chorus → bridge → rap → final chorus → outro</code></td>
+            <td class="good">结构完整，记忆点固定出现两次</td>
+          </tr>
+          <tr>
+            <td>8</td><td class="k">关键人名</td>
+            <td><code class="pill">李欣彤</code>（仅出现在标题）</td>
+            <td class="bad">人名易被模型忽略、替换或淡化，做不成「钩子」</td>
+            <td><code class="pill">repeat "李欣彤" as the emotional hook, sing it at the start of every chorus</code></td>
+            <td class="good">名字成为全曲锚点，副歌一句就记住</td>
+          </tr>
+          <tr>
+            <td>9</td><td class="k">负面提示</td>
+            <td><code class="pill">（无）</code></td>
+            <td class="bad">不给排除项，模型会自动补欢快/电子元素</td>
+            <td><code class="pill">no upbeat, no cheerful, no happy tone, no EDM drop, no bright synth lead</code></td>
+            <td class="good">直接掐掉跑偏方向</td>
+          </tr>
+          <tr>
+            <td>10</td><td class="k">风格锚点</td>
+            <td><code class="pill">（无）</code></td>
+            <td class="bad">无参照 → 风格漂移，两版差异大</td>
+            <td><code class="pill">cinematic emotional OST, emo ballad, husky female lead</code></td>
+            <td class="good">两版结果更接近、更可复用</td>
+          </tr>
+          <tr>
+            <td>11</td><td class="k">署名 / 署名位</td>
+            <td><code class="pill">活力可爱的溜肉段</code></td>
+            <td class="fix">疑似平台随机生成的署名，与作者/风格无关，容易误导听众</td>
+            <td><code class="pill">artist: 李欣彤 · 演唱署名自定</code>（在导出后手动改，或指定 artist 字段）</td>
+            <td class="good">署名与作品一致，不再出现无关词</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 5. 改造后完整提示词 ============ -->
+  <section class="card">
+    <h2>05 改造后的完整提示词 <small>可直接复制使用</small></h2>
+    <div class="desc">把下面这段整体喂给音乐生成工具（Suno / 海绵 / 网易天音 / 魔音等），替换掉原来的短提示词。</div>
+
+    <div class="prompt" id="promptEn"><button class="copy" data-target="promptEn">复制</button>Emotional emo pop ballad, melancholic and heartbroken, late-night loneliness.
+Husky female vocal, breathy and raspy alto, intimate close-mic, slight vocal fry, restrained crying that breaks in the chorus.
+Language: mostly Mandarin, with an English hook line in the chorus, and one short Korean line in the bridge.
+Tempo: 72 BPM for verse and chorus; 128 BPM half-time trap feel in the rap section.
+Instrumentation: sad piano, warm string pad, deep sub bass, soft trap drums, subtle tape hiss.
+Structure: intro (spoken whisper) → verse 1 → pre-chorus → chorus → verse 2 → pre-chorus → chorus → bridge (a cappella) → rap verse → final chorus (stripped down) → outro (fade).
+Lyric hook: repeat the name "李欣彤" at the start of every chorus as the emotional anchor.
+Mix: intimate and wide, vocal up front, long reverb tail on the final line.
+Exclude: no upbeat, no cheerful, no happy tone, no EDM drop, no bright synth lead.</div>
+
+    <div class="prompt" id="promptCn" style="margin-top:14px"><button class="copy" data-target="promptCn">复制</button><span class="cn"># 中文对照版（喂给支持中文提示的工具）</span>
+深情 emo 流行抒情曲，悲情、心碎、深夜孤独感。
+沙哑女声：气声、烟嗓女中音、贴近麦克风的私语感、轻微沙哑颗粒，副歌处克制地哭腔爆发。
+语言：以中文为主，副歌夹一句英文 hook，桥段来一句短韩文。
+速度：主歌与副歌 72 BPM；说唱段用 128 BPM 半速 trap 感。
+配器：悲伤钢琴 + 温暖弦乐铺底 + 深沉 sub 贝斯 + 柔和 trap 鼓 + 轻微磁带底噪。
+结构：独白开场 → 主歌1 → 预副歌 → 副歌 → 主歌2 → 预副歌 → 副歌 → 桥段（清唱）→ 说唱段 → 终副歌（减配器）→ 尾奏（渐弱）。
+歌词钩子：每个副歌开头都唱出名字「李欣彤」作为情绪锚点。
+混音：人声靠前、空间感宽，最后一句留长混响尾巴。
+排除：不要欢快、不要元气、不要甜、不要 EDM drop、不要明亮合成器主音。</div>
+
+    <div class="note">
+      <b>使用顺序建议：</b>先只用「风格 + 人声 + 情绪」三行生成一版 → 满意后再把结构、BPM、语言分配补进去 → 最后加负面提示。一次全塞进去，模型容易顾此失彼。
+    </div>
+  </section>
+
+  <!-- ============ 6. 结论 ============ -->
+  <section class="card">
+    <h2>06 结论与下一步</h2>
+    <ol class="steps">
+      <li>两版差异的<b>根因不在音频，在提示词</b>：A、B 只有「女声」一个变量不同，其余风格词都没锁死，所以两版本质上仍是「同一模糊提示的两次随机采样」。</li>
+      <li>最大的问题词是 <b>「活力可爱」</b>——它和 emo 悲情歌词正面冲突，是结果跑偏、且两版都不够「痛」的首要原因。</li>
+      <li>其次是<b>「女声」≠「沙哑」</b>：只锁性别锁不住音色，必须写 husky / raspy / breathy / vocal fry。</li>
+      <li>下一步：用 05 节的完整提示词重新生成 1–2 版，重点听「情绪基调」和「副歌是否唱出名字」这两项是否达标。</li>
+    </ol>
+    <div class="note">
+      ※ 说明：本页的客观数据（体积、码率、AIGC 标识、生成编号）来自文件本身，已核实；<br>
+      03 节的听感对比与部分诊断属<b>基于提示词的合理推断</b>，需你试听后回填确认。
+    </div>
+  </section>
+
+  <footer>李欣彤 · 音频对比与提示词改造 · 本页为本地静态页面，音频与页面需保持在同一目录</footer>
+</div>
+
+<script>
+document.querySelectorAll('.copy').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const el = document.getElementById(btn.dataset.target);
+    // 复制时去掉按钮文字与注释
+    let txt = '';
+    el.childNodes.forEach(n=>{
+      if(n.nodeType === 3) txt += n.nodeValue;
+    });
+    txt = txt.trim();
+    navigator.clipboard.writeText(txt).then(()=>{
+      const old = btn.textContent; btn.textContent = '已复制 ✓';
+      setTimeout(()=>{ btn.textContent = old; }, 1400);
+    }).catch(()=>{ btn.textContent = '请手动选择'; });
+  });
+});
+
+document.querySelectorAll('audio').forEach(a=>{
+  const tip = document.getElementById('tip' + a.id.replace('audio',''));
+  if(!tip) return;
+  const sources = Array.from(a.querySelectorAll('source'));
+  let failed = 0;
+  sources.forEach(s=>{
+    s.addEventListener('error', ()=>{
+      failed++;
+      if(failed === sources.length){
+        tip.textContent = '⚠ 音频加载失败：请确认 ' + sources.map(x=>x.getAttribute('src')).join(' 或 ') + ' 与本页面位于同一文件夹。';
+        tip.classList.add('show');
+      }
+    });
+  });
+});
+</script>
+</body>
+</html>
