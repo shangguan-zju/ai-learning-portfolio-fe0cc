@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作业十一 · 改写一处操纵性设计 · before / after 对照</title>
+<style>
+  :root{
+    --bg1:#c9c6c3;--bg2:#b8b5b2;
+    --ink:#3a3735;--ink-soft:#7d7875;
+    --glass:linear-gradient(155deg,rgba(255,255,255,.66),rgba(255,255,255,.36));
+    --brd:rgba(255,255,255,.72);
+    --shadow:0 20px 46px -26px rgba(70,64,60,.6);
+    --radius:26px;
+    --navy:#101d32;
+    --line:#e5e1dd;
+    --before:#a8596a;--before-bg:#fbeef0;
+    --after:#4b7a5f;--after-bg:#eef5f0;
+    --warn:#a97c2f;--warn-bg:#fbf4e6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-tap-highlight-color:transparent;scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+    color:var(--ink);min-height:100vh;padding:56px 20px 64px;-webkit-font-smoothing:antialiased;
+    background:
+      radial-gradient(900px 520px at 8% -6%, rgba(255,255,255,.8), transparent 62%),
+      radial-gradient(760px 480px at 96% 108%, rgba(255,255,255,.62), transparent 58%),
+      linear-gradient(160deg,var(--bg1),var(--bg2));
+    background-attachment:fixed;line-height:1.7;
+  }
+  .page{width:min(1120px,100%);margin:0 auto}
+  .back{display:inline-flex;align-items:center;gap:6px;margin-bottom:26px;font-size:12px;font-weight:600;
+    color:#6b6460;text-decoration:none;padding:8px 16px;border-radius:99px;background:rgba(255,255,255,.5);
+    border:1px solid var(--brd)}
+  .back:hover{color:#3a3735}
+
+  /* ===== Hero ===== */
+  .hero{text-align:center;padding:10px 0 38px}
+  .eyebrow{font-size:12px;letter-spacing:.28em;color:var(--ink-soft);text-transform:uppercase}
+  .hero h1{font-size:clamp(26px,4.5vw,42px);font-weight:800;margin:12px 0 14px;letter-spacing:.02em;
+    background:linear-gradient(180deg,#4b4643,#8b847f);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero .lead{font-size:14px;line-height:2;color:var(--ink-soft);max-width:720px;margin:0 auto}
+  .chips{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:20px}
+  .chips span{font-size:11.5px;padding:7px 15px;border-radius:99px;color:#6b6460;background:rgba(255,255,255,.5);
+    border:1px solid var(--brd);backdrop-filter:blur(8px)}
+
+  /* ===== 任务卡 ===== */
+  .slip{margin-top:22px;border-radius:20px;overflow:hidden;border:1px solid var(--brd);
+    background:var(--glass);box-shadow:var(--shadow);backdrop-filter:blur(20px) saturate(150%)}
+  .slip .bar{padding:13px 22px;background:var(--navy);color:#dce6f4;display:flex;flex-wrap:wrap;
+    gap:10px 26px;font-size:11.5px;letter-spacing:.08em}
+  .slip .bar b{color:#fff;font-weight:700}
+  .slip .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line)}
+  .slip .cell{padding:16px 20px;background:rgba(255,255,255,.55)}
+  .slip .cell .k{font-size:10.5px;letter-spacing:.14em;color:var(--ink-soft)}
+  .slip .cell .v{font-size:15px;font-weight:800;margin-top:5px;letter-spacing:-.01em;line-height:1.5}
+
+  /* ===== Section ===== */
+  .section{margin-top:22px;padding:28px;border-radius:var(--radius);background:var(--glass);
+    border:1px solid var(--brd);box-shadow:var(--shadow);
+    backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%)}
+  .shead{display:flex;gap:14px;align-items:flex-start;margin-bottom:18px}
+  .snum{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;flex:0 0 38px;
+    border-radius:12px;background:var(--navy);color:#fff;font-size:12px;font-weight:800;letter-spacing:.08em}
+  .section h2{font-size:20px;font-weight:800;letter-spacing:-.01em}
+  .ssub{margin-top:4px;color:var(--ink-soft);font-size:12.5px}
+  .para{font-size:13px;line-height:2;color:#5d5854;margin-top:14px}
+  .para b{color:#3a3735}
+
+  /* ===== 对照区 ===== */
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:6px}
+  .panel{border:1px solid var(--line);border-radius:20px;background:#fff;overflow:hidden;display:flex;flex-direction:column}
+  .panel .ph{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 18px;
+    font-size:11.5px;letter-spacing:.1em;font-weight:800}
+  .panel.b{border-color:rgba(168,89,106,.28)}
+  .panel.b .ph{background:var(--before-bg);color:var(--before)}
+  .panel.a{border-color:rgba(75,122,95,.28)}
+  .panel.a .ph{background:var(--after-bg);color:var(--after)}
+  .panel .ph em{font-style:normal;font-weight:600;letter-spacing:0;font-size:11px;opacity:.8}
+  .stage{padding:22px;display:flex;justify-content:center;background:
+    linear-gradient(160deg,#f4f2f0,#e9e6e3)}
+
+  /* ===== 手机框 ===== */
+  .phone{position:relative;width:100%;max-width:300px;border-radius:26px;background:#1b1b1f;
+    padding:9px;box-shadow:0 22px 40px -24px rgba(30,30,35,.8)}
+  .screen{position:relative;border-radius:19px;overflow:hidden;height:430px;
+    background:linear-gradient(170deg,#232634,#31323f 55%,#3b3547);display:flex;flex-direction:column}
+  .sbar{display:flex;justify-content:space-between;padding:9px 14px 4px;font-size:9px;color:rgba(255,255,255,.55);letter-spacing:.06em}
+  .video{flex:1;position:relative;display:flex;align-items:center;justify-content:center}
+  .play{width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(255,255,255,.35);
+    display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.6);font-size:12px}
+  .vbar{padding:0 14px 12px;display:grid;gap:6px}
+  .vbar i{display:block;height:5px;border-radius:3px;background:rgba(255,255,255,.12)}
+  .vbar i:nth-child(2){width:66%}
+  .veil{position:absolute;inset:0;background:rgba(12,12,16,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+
+  /* ===== 弹窗（before） ===== */
+  .modal{position:relative;width:100%;border-radius:16px;background:#fff;padding:20px 16px 16px;text-align:center;
+    box-shadow:0 16px 30px -18px rgba(0,0,0,.6)}
+  .modal .close-x{position:absolute;top:8px;right:10px;width:16px;height:16px;line-height:16px;font-size:13px;
+    color:#c9c4c0;cursor:default}
+  .modal h4{font-size:15px;font-weight:800;color:#2b2b30}
+  .modal .big{font-size:40px;font-weight:900;color:#e0563f;letter-spacing:-2px;margin:6px 0 0;line-height:1}
+  .modal .big small{font-size:12px;font-weight:700;letter-spacing:0;color:#e0563f}
+  .modal .tiny{font-size:8px;color:#b3aca6;margin-top:3px}
+  .btn-main{display:block;width:100%;margin-top:12px;padding:11px 0;border-radius:99px;border:0;
+    font-size:14px;font-weight:800;color:#fff;cursor:pointer;
+    background:linear-gradient(135deg,#ff7a45,#e0563f)}
+  .agree{display:flex;align-items:flex-start;gap:5px;margin-top:10px;text-align:left;font-size:8.5px;color:#a9a29c;line-height:1.6}
+  .agree .box{flex:0 0 11px;width:11px;height:11px;margin-top:1px;border-radius:2px;background:#e0563f;
+    color:#fff;font-size:8px;display:flex;align-items:center;justify-content:center}
+  .later{display:inline-block;margin-top:11px;font-size:10px;color:#c3bdb7}
+
+  /* ===== 弹窗（after） ===== */
+  .modal2{position:relative;width:100%;border-radius:16px;background:#fff;padding:22px 16px 16px;text-align:left;
+    box-shadow:0 16px 30px -18px rgba(0,0,0,.6)}
+  .modal2 .close-x{position:absolute;top:2px;right:2px;width:44px;height:44px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:17px;color:#6b6460;background:#f1efed}
+  .modal2 h4{font-size:15px;font-weight:800;color:#2b2b30;text-align:center}
+  .price{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;margin-top:14px;border-radius:12px;overflow:hidden;
+    background:#eceae7}
+  .price div{background:#faf9f8;padding:10px 8px;text-align:center}
+  .price b{display:block;font-size:15px;font-weight:900;color:#2b2b30}
+  .price span{display:block;font-size:9px;color:#8d8781;margin-top:2px;line-height:1.4}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;
+    padding:10px 12px;border-radius:12px;background:#f6f5f3}
+  .toggle-row .t{font-size:10.5px;color:#4a4642;line-height:1.5}
+  .toggle-row .t b{display:block;font-size:11px;font-weight:800;color:#2b2b30}
+  .sw{flex:0 0 40px;width:40px;height:22px;border-radius:99px;background:#cfcac5;position:relative;
+    border:0;cursor:pointer;transition:background .25s}
+  .sw::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;
+    background:#fff;transition:transform .25s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .sw[aria-checked="true"]{background:#4b7a5f}
+  .sw[aria-checked="true"]::after{transform:translateX(18px)}
+  .btn-main2{display:block;width:100%;margin-top:12px;padding:11px 0;border-radius:99px;border:0;
+    font-size:12.5px;font-weight:800;color:#fff;cursor:pointer;background:#2b2b30}
+  .btn-sub2{display:block;width:100%;margin-top:8px;padding:11px 0;border-radius:99px;
+    border:1px solid #d8d3ce;background:#fff;font-size:12px;font-weight:700;color:#4a4642;cursor:pointer}
+  .hint{margin-top:10px;font-size:9px;color:#8d8781;line-height:1.6;text-align:center}
+  .hint.on{color:#a97c2f}
+
+  /* ===== 标注点 ===== */
+  .mark{position:absolute;z-index:3;width:19px;height:19px;border-radius:50%;border:0;cursor:pointer;
+    font-size:10.5px;font-weight:800;color:#fff;background:#a8596a;
+    box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;
+    transition:transform .2s,background .2s}
+  .mark:hover,.mark.hot{transform:scale(1.22);background:#111}
+  .m1{top:44px;left:-6px}
+  .m2{top:96px;right:-6px}
+  .m3{top:150px;left:-6px}
+  .m4{top:214px;right:-6px}
+  .m5{bottom:52px;left:-6px}
+  .m6{bottom:8px;right:-6px}
+
+  /* ===== 表格 ===== */
+  .twrap{overflow-x:auto;margin-top:4px}
+  table{width:100%;border-collapse:collapse;font-size:12.4px;min-width:820px}
+  thead th{padding:11px 13px;background:#faf9f8;color:#57524e;font-size:11px;letter-spacing:.08em;
+    text-align:left;font-weight:800;white-space:nowrap;border-bottom:1px solid var(--line)}
+  tbody td{padding:12px 13px;border-bottom:1px solid var(--line);color:#4a4642;vertical-align:top;line-height:1.75}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:nth-child(even){background:#fcfbfa}
+  tbody tr.hl{background:#fff8e6}
+  td.k{font-weight:800;color:#4a4642;white-space:nowrap}
+  .tagp{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:99px;
+    background:#eef0f4;color:#4a5568;white-space:nowrap}
+  .small{font-size:11px;color:var(--ink-soft)}
+
+  /* ===== 验收 ===== */
+  .verify{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:6px}
+  .vcard{border:1px solid var(--line);border-radius:18px;background:#fff;padding:18px 20px}
+  .vcard h3{font-size:13.5px;font-weight:800;display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .vcard h3 i{font-style:normal;width:20px;height:20px;border-radius:50%;font-size:11px;display:flex;
+    align-items:center;justify-content:center;color:#fff;background:var(--after)}
+  .vcard ul{list-style:none;display:grid;gap:8px}
+  .vcard li{font-size:12px;color:#5d5854;line-height:1.75;display:flex;gap:8px}
+  .vcard li::before{content:"·";color:#b3aca6;font-weight:900}
+
+  .note{margin-top:16px;border-left:3px solid var(--warn);background:var(--warn-bg);
+    border-radius:0 12px 12px 0;padding:14px 18px;font-size:12px;color:#6b5a33;line-height:1.9}
+  .note b{color:#5a4a24}
+
+  footer{text-align:center;margin-top:38px;font-size:11.5px;color:var(--ink-soft);letter-spacing:.08em;line-height:2}
+
+  @media (max-width:880px){
+    body{padding:40px 16px 52px}
+    .compare{grid-template-columns:1fr}
+    .verify{grid-template-columns:1fr}
+    .slip .grid{grid-template-columns:1fr 1fr}
+    .section{padding:22px 18px}
+  }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <a class="back" href="index.html">← 返回作品集</a>
+
+  <header class="hero">
+    <p class="eyebrow">第三部分 · 课上练 ② · 第 10 章</p>
+    <h1>把「默认勾选」改回「默认不做」</h1>
+    <p class="lead">一处我手机里真实见过的操纵性设计：视频 App 的「首月 6 元」会员弹窗。它用默认勾选、语义替换和藏起来的关闭键，替用户把订阅决定了。下面把它改写成 before / after 两版，并把每一处改动映射回一条伦理原则。</p>
+    <div class="chips">
+      <span>操纵性设计</span>
+      <span>before / after 对照</span>
+      <span>原则映射一行一条</span>
+      <span>最低验收：仍旧好用，且不再骗人</span>
+    </div>
+  </header>
+
+  <section class="slip">
+    <div class="bar">
+      <span>练习 <b>练② · 改写一处操纵性设计</b></span>
+      <span>章节 <b>第 10 章 · 交互会替你做决定</b></span>
+      <span>交付 <b>两版对照图 + 原则映射</b></span>
+    </div>
+    <div class="grid">
+      <div class="cell">
+        <div class="k">案例</div>
+        <div class="v">视频 App<br>首月 6 元会员弹窗</div>
+      </div>
+      <div class="cell">
+        <div class="k">操纵手法</div>
+        <div class="v">默认勾选 / 诱导按钮 / 关闭藏三层</div>
+      </div>
+      <div class="cell">
+        <div class="k">改动数量</div>
+        <div class="v">6 处 · 对应 6 条原则</div>
+      </div>
+      <div class="cell">
+        <div class="k">最低验收</div>
+        <div class="v">仍然好用<br>不再骗人</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shead">
+      <div class="snum">01</div>
+      <div>
+        <h2>两版对照：同一件事，两种态度</h2>
+        <div class="ssub">左为原设计复刻（点击红色圆点看它挑拨了哪一步），右为改写版，开关可以真的点一下</div>
+      </div>
+    </div>
+
+    <div class="compare">
+      <!-- BEFORE -->
+      <div class="panel b">
+        <div class="ph"><span>BEFORE · 原设计</span><em>默认勾选 + 诱导按钮 + 关闭过小</em></div>
+        <div class="stage">
+          <div class="phone">
+            <div class="screen">
+              <div class="sbar"><span>9:41</span><span>5G ▮▮▮</span></div>
+              <div class="video"><div class="play">▶</div></div>
+              <div class="vbar"><i></i><i></i><i></i></div>
+              <div class="veil">
+                <div class="modal">
+                  <span class="close-x">×</span>
+                  <button class="mark m1" data-row="r1" title="默认勾选">1</button>
+                  <button class="mark m2" data-row="r2" title="按钮语义">2</button>
+                  <button class="mark m3" data-row="r3" title="价格显著性">3</button>
+                  <button class="mark m4" data-row="r4" title="退出成本">4</button>
+                  <button class="mark m5" data-row="r5" title="二次拦截">5</button>
+                  <button class="mark m6" data-row="r6" title="取消路径">6</button>
+
+                  <h4>限时福利 · 新用户专享</h4>
+                  <div class="big">¥6<small> 首月</small></div>
+                  <div class="tiny">原价 ¥25 / 月</div>
+                  <button class="btn-main" type="button">立即领取</button>
+                  <div class="agree">
+                    <span class="box">✓</span>
+                    <span>已阅读并同意《连续包月服务协议》，开通后次月起 25 元 / 月自动续费，可在「我的 - 客服」中申请取消</span>
+                  </div>
+                  <span class="later">暂不需要</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AFTER -->
+      <div class="panel a">
+        <div class="ph"><span>AFTER · 改写版</span><em>默认不做 + 价格并列 + 关闭 44px</em></div>
+        <div class="stage">
+          <div class="phone">
+            <div class="screen">
+              <div class="sbar"><span>9:41</span><span>5G ▮▮▮</span></div>
+              <div class="video"><div class="play">▶</div></div>
+              <div class="vbar"><i></i><i></i><i></i></div>
+              <div class="veil">
+                <div class="modal2">
+                  <span class="close-x">×</span>
+                  <h4>会员试用 7 天</h4>
+                  <div class="price">
+                    <div><b>¥6</b><span>前 7 天</span></div>
+                    <div><b>¥25</b><span>第 8 天起 / 月</span></div>
+                    <div><b>随时</b><span>一步取消</span></div>
+                  </div>
+                  <div class="toggle-row">
+                    <div class="t"><b>到期自动续费</b>默认关闭，只有你打开才会扣费</div>
+                    <button class="sw" id="autoRenew" role="switch" aria-checked="false" aria-label="到期自动续费"></button>
+                  </div>
+                  <button class="btn-main2" type="button">6 元试用 7 天，之后 25 元 / 月</button>
+                  <button class="btn-sub2" type="button">不用了，继续免费版</button>
+                  <div class="hint" id="renewHint">当前：7 天后自动结束，不扣费</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shead">
+      <div class="snum">02</div>
+      <div>
+        <h2>原则映射：一处改动对一条原则</h2>
+        <div class="ssub">点左边的编号，会跳到对应的那一行；每条都写清「它原来挑拨的是人的哪一步」</div>
+      </div>
+    </div>
+    <div class="twrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>原设计（before）</th>
+            <th>改写后（after）</th>
+            <th>它挑拨的是哪一步</th>
+            <th>对应原则</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr id="r1">
+            <td class="k">1</td>
+            <td>协议默认打勾，用户不点也等于同意订阅</td>
+            <td>自动续费默认关闭，开启必须由用户主动点一次开关</td>
+            <td>利用「现状偏好」与惰性：多数人不会去取消一个已经勾上的框</td>
+            <td><span class="tagp">默认选项应是最保守的选项</span></td>
+          </tr>
+          <tr id="r2">
+            <td class="k">2</td>
+            <td>按钮写「立即领取」，实际动作是签约订阅</td>
+            <td>按钮写「6 元试用 7 天，之后 25 元 / 月」，文案即结果</td>
+            <td>语义替换：把「订阅」包装成「赠予」，让人以为自己只是在收礼物</td>
+            <td><span class="tagp">按钮文案须描述真实后果</span></td>
+          </tr>
+          <tr id="r3">
+            <td class="k">3</td>
+            <td>首月 6 元放大到 40px，次月 25 元缩成 8px 浅灰</td>
+            <td>首 7 天、之后每月、取消方式三格并列同字号</td>
+            <td>锚定效应：注意力被最低的那个数字牵走，长期成本被视觉降级</td>
+            <td><span class="tagp">关键信息须同等显著</span></td>
+          </tr>
+          <tr id="r4">
+            <td class="k">4</td>
+            <td>关闭键 16px、浅灰、位于角落，触控区不足</td>
+            <td>关闭键 44px 圆形、深色可见，触控区达标</td>
+            <td>制造「没得选」的错觉：想退出的人先要找到出口，找的过程就是挽留</td>
+            <td><span class="tagp">退出成本不得高于进入成本</span></td>
+          </tr>
+          <tr id="r5">
+            <td class="k">5</td>
+            <td>点关闭后再弹一次「确定放弃 6 元优惠？」</td>
+            <td>关闭即关闭，只在页内留一行状态说明，不再拦截</td>
+            <td>消耗意志力：把「拒绝」变成需要重复表态的事</td>
+            <td><span class="tagp">尊重用户已表达的拒绝</span></td>
+          </tr>
+          <tr id="r6">
+            <td class="k">6</td>
+            <td>开通一键完成，取消要去「我的 - 客服」另行申请</td>
+            <td>取消入口与开通同深度：我的 - 订阅管理 - 取消，一步完成</td>
+            <td>摩擦不对称：进门的门是自动门，出门的门要找人开</td>
+            <td><span class="tagp">订阅与取消须对等</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="para"><b>一条总原则：</b>判断一个交互是否操纵，看的不是它有没有说假话，而是它<b>把哪一步的决策权从用户手里拿走了</b>。上面 6 处，没有一句假话，但每一处都在替用户做决定。</p>
+  </section>
+
+  <section class="section">
+    <div class="shead">
+      <div class="snum">03</div>
+      <div>
+        <h2>最低验收：改完之后，它还卖得出去吗</h2>
+        <div class="ssub">这是本次练习最容易失手的地方——改得太「干净」，产品就死了</div>
+      </div>
+    </div>
+    <div class="verify">
+      <div class="vcard">
+        <h3><i>✓</i>仍旧好用</h3>
+        <ul>
+          <li>新用户仍能在 3 步内开通试用：看价格 → 决定是否自动续费 → 点主按钮</li>
+          <li>愿意续费的人只多点一次开关，没有被增加理解成本</li>
+          <li>试用结束后正常提醒、正常扣费，商业路径完整保留</li>
+          <li>不靠弹窗，也能在会员页看到同一份价格说明</li>
+        </ul>
+      </div>
+      <div class="vcard">
+        <h3><i>✓</i>不再骗人</h3>
+        <ul>
+          <li>决策发生前，首期价、续费价、扣费时间、取消方式全部可见</li>
+          <li>默认值不替用户表态：不勾选 = 不续费，语义与结果一致</li>
+          <li>关闭一次就是关闭，不做二次拦截</li>
+          <li>取消与开通同等容易，不存在「进门自动门、出门找人开」</li>
+        </ul>
+      </div>
+    </div>
+    <div class="note">
+      <b>这版改写的代价，也要说清楚：</b>去掉默认勾选后，试用转付费的转化率一定会下降，这是产品方真实要承担的成本。改写不是免费的道德表演，它的前提是——把「靠默认值收的钱」换成「靠产品本身值这个价收的钱」。如果产品留不住人，正确的做法是改产品，不是改默认值。
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shead">
+      <div class="snum">04</div>
+      <div>
+        <h2>证据与边界</h2>
+        <div class="ssub">哪些是实拍，哪些是我复刻的，分开写</div>
+      </div>
+    </div>
+    <p class="para">
+      <b>实拍部分：</b>原设计的六处手法来自我手机上真实遇到的会员开通弹窗（默认勾选、大字首月价、小字续费说明、延迟出现的关闭键、关闭后二次挽留、取消需联系客服）。左图是按这六处手法做的等效复刻，不是截图搬运。
+    </p>
+    <p class="para">
+      <b>复刻部分：</b>配色、字号与圆角为演示需要做了简化，但<b>信息层级关系保持原样</b>——这一点是可以被逐项核对的：首月价 40px 对续费价 8px、关闭键 16px 对主按钮全宽、默认勾选状态在打开瞬间即为已选。
+    </p>
+    <p class="para">
+      <b>结论的边界：</b>这份改写只针对「以默认值和视觉权重替用户做付费决定」这一类操纵，适用于订阅制的 C 端产品。它不适用于需要监护人代决的场景，也不解决价格本身是否合理的问题——那是定价问题，不是交互伦理问题。
+    </p>
+  </section>
+
+  <footer>
+    第三部分 · 课上练 ② · 改写一处操纵性设计<br>
+    两版对照图 + 原则映射一行一条 · 全部为内联实现，无外部资源依赖，可离线运行
+  </footer>
+
+</main>
+
+<script>
+(function(){
+  // 标注点 → 高亮对应表格行
+  var marks = document.querySelectorAll('.mark');
+  for (var i = 0; i < marks.length; i++) {
+    marks[i].addEventListener('click', function(){
+      var id = this.getAttribute('data-row');
+      var row = document.getElementById(id);
+      if (!row) return;
+      var rows = document.querySelectorAll('tbody tr');
+      for (var j = 0; j < rows.length; j++) rows[j].classList.remove('hl');
+      row.classList.add('hl');
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(function(){ row.classList.remove('hl'); }, 2400);
+    });
+  }
+
+  // 改写版的自动续费开关
+  var sw = document.getElementById('autoRenew');
+  var hint = document.getElementById('renewHint');
+  if (sw && hint) {
+    sw.addEventListener('click', function(){
+      var on = sw.getAttribute('aria-checked') === 'true';
+      sw.setAttribute('aria-checked', on ? 'false' : 'true');
+      if (on) {
+        hint.className = 'hint';
+        hint.textContent = '当前：7 天后自动结束，不扣费';
+      } else {
+        hint.className = 'hint on';
+        hint.textContent = '已开启自动续费：第 8 天 00:00 扣 25 元，可随时取消';
+      }
+    });
+  }
+})();
+</script>
+</body>
+</html>

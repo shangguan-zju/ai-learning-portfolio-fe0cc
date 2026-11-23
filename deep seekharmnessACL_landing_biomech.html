@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>双侧落地时峰值生物力学变量的出现角度 · 性别 × 疲劳</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<style>
+  :root{
+    --blue-900:#1f3f5c;
+    --blue-700:#2c5f8a;
+    --blue-500:#4a86b5;
+    --blue-200:#cfe0ee;
+    --brown-700:#a9713f;
+    --brown-500:#c08a55;
+    --brown-200:#eddbc9;
+    --ink:#22303c;
+    --ink-soft:#5a6b78;
+    --line:#e3e8ee;
+    --bg:#f5f7fa;
+    --danger:#c0504d;
+    --radius:14px;
+    --shadow:0 2px 10px rgba(31,63,92,.07);
+    --left:264px;
+    --right:372px;
+  }
+  *{box-sizing:border-box;}
+  html{overflow-x:hidden;}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Segoe UI","PingFang SC","Microsoft YaHei","Hiragino Sans GB",system-ui,sans-serif;
+    font-size:14px;line-height:1.65;overflow-x:hidden;
+  }
+  h1,h2,h3,h4{margin:0;font-weight:650;letter-spacing:.2px;}
+  a{color:var(--blue-700);text-decoration:none;}
+  a:hover{text-decoration:underline;}
+
+  /* ---------- 顶部 ---------- */
+  .hero{
+    background:linear-gradient(120deg,#ffffff 0%,#f3f7fb 55%,#faf3ec 100%);
+    border-bottom:1px solid var(--line);padding:26px 26px 22px;
+  }
+  .hero-inner{max-width:1680px;margin:0 auto;}
+  .kicker{font-size:12px;letter-spacing:2px;color:var(--brown-700);text-transform:uppercase;font-weight:700;}
+  .hero h1{font-size:clamp(19px,2.3vw,27px);margin:8px 0 10px;color:var(--blue-900);line-height:1.35;}
+  .hero p.lead{margin:0 0 14px;color:var(--ink-soft);font-size:14.5px;max-width:1100px;}
+  .badges{display:flex;flex-wrap:wrap;gap:8px;}
+  .badge{
+    background:#fff;border:1px solid var(--line);border-radius:999px;padding:4px 12px;
+    font-size:12px;color:var(--ink-soft);box-shadow:var(--shadow);
+  }
+  .badge b{color:var(--blue-700);font-weight:650;}
+  .badge.warn{background:#fdf6f2;border-color:#f0d9cd;color:#8c5a3c;}
+
+  /* ---------- 三栏布局 ---------- */
+  .layout{
+    display:grid;
+    grid-template-columns:var(--left) 8px minmax(0,1fr) 8px var(--right);
+    gap:0;max-width:1800px;margin:0 auto;padding:18px 18px 40px;align-items:start;
+  }
+  .col{min-width:0;display:flex;flex-direction:column;gap:16px;}
+  .col.left{position:sticky;top:14px;}
+  .col.mid{min-width:0;}
+  .splitter{
+    align-self:stretch;cursor:col-resize;border-radius:6px;position:relative;
+    display:flex;align-items:center;justify-content:center;touch-action:none;
+  }
+  .splitter::after{
+    content:"";width:3px;height:54px;border-radius:3px;background:#d6dee7;transition:background .15s;
+  }
+  .splitter:hover::after,.splitter.active::after{background:var(--blue-500);}
+  .splitter:hover{background:rgba(74,134,181,.07);}
+
+  /* ---------- 卡片 ---------- */
+  .card{
+    background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:16px 16px 14px;min-width:0;
+  }
+  .card h2{font-size:15px;color:var(--blue-900);display:flex;align-items:center;gap:8px;}
+  .card h2 .num{
+    width:22px;height:22px;flex:0 0 22px;border-radius:7px;background:var(--blue-700);color:#fff;
+    font-size:12px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;
+  }
+  .card .sub{font-size:12px;color:var(--ink-soft);margin:6px 0 12px;}
+  .card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;}
+
+  /* ---------- 目录 ---------- */
+  nav.toc ol{margin:10px 0 0;padding-left:0;list-style:none;counter-reset:toc;}
+  nav.toc li{counter-increment:toc;border-bottom:1px dashed var(--line);}
+  nav.toc li:last-child{border-bottom:none;}
+  nav.toc a{display:flex;gap:8px;padding:7px 4px;color:var(--ink);font-size:13px;border-radius:8px;}
+  nav.toc a::before{
+    content:counter(toc);color:var(--brown-700);font-weight:700;font-size:12px;min-width:14px;
+  }
+  nav.toc a:hover{background:#f2f7fb;text-decoration:none;color:var(--blue-700);}
+
+  /* ---------- 结论 ---------- */
+  ol.concl{margin:8px 0 0;padding-left:20px;}
+  ol.concl li{margin-bottom:9px;font-size:13px;color:#2b3b48;}
+  ol.concl li b{color:var(--blue-700);}
+  .tag{
+    display:inline-block;font-size:11px;padding:1px 7px;border-radius:6px;margin-right:6px;
+    background:#eef4f9;color:var(--blue-700);border:1px solid #dbe8f2;font-weight:600;
+  }
+  .tag.brown{background:#faf1e9;color:var(--brown-700);border-color:#efdccb;}
+  .tag.red{background:#fbf0ef;color:var(--danger);border-color:#f1d5d3;}
+
+  /* ---------- 时间轴 ---------- */
+  .timeline{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px;}
+  .step{
+    flex:1 1 152px;min-width:140px;background:#fbfcfe;border:1px solid var(--line);
+    border-top:3px solid var(--blue-500);border-radius:10px;padding:10px 11px;position:relative;
+  }
+  .step:nth-child(even){border-top-color:var(--brown-500);}
+  .step .idx{
+    font-size:11px;font-weight:800;color:var(--blue-700);letter-spacing:1px;
+  }
+  .step:nth-child(even) .idx{color:var(--brown-700);}
+  .step h4{font-size:13px;margin:3px 0 4px;color:var(--blue-900);}
+  .step p{margin:0;font-size:12px;color:var(--ink-soft);line-height:1.5;}
+  .step .val{display:block;margin-top:5px;font-size:12px;color:var(--blue-700);font-weight:650;}
+  .step:nth-child(even) .val{color:var(--brown-700);}
+
+  /* ---------- 图表 ---------- */
+  .chart-card{padding-bottom:8px;}
+  .chart-box{width:100%;height:340px;}
+  .chart-box.tall{height:430px;}
+  .btn{
+    border:1px solid var(--line);background:#fff;color:var(--blue-700);border-radius:8px;
+    font-size:12px;padding:5px 10px;cursor:pointer;font-family:inherit;font-weight:600;
+    white-space:nowrap;transition:all .15s;
+  }
+  .btn:hover{background:var(--blue-700);color:#fff;border-color:var(--blue-700);}
+  .note{
+    margin:10px 0 0;padding:9px 11px;background:#fbfcfe;border-left:3px solid var(--blue-200);
+    border-radius:0 8px 8px 0;font-size:12px;color:var(--ink-soft);line-height:1.6;
+  }
+  .note.warn{background:#fdf7f3;border-left-color:#e9c9b4;}
+  .note b{color:var(--blue-900);}
+
+  /* ---------- 附表 ---------- */
+  table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;}
+  th,td{padding:6px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;
+       word-break:break-word;overflow-wrap:anywhere;}
+  th{background:#f6f9fc;color:var(--blue-900);font-weight:650;font-size:11.5px;}
+  tr:hover td{background:#fafcfe;}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;}
+  .sig{color:var(--danger);font-weight:700;}
+  .ns{color:#93a3b0;}
+  .tbl-scroll{overflow:visible;}
+  .cap{font-size:11.5px;color:#8494a1;margin-top:8px;line-height:1.6;}
+
+  .legend-inline{display:flex;flex-wrap:wrap;gap:12px;margin:8px 0 0;font-size:12px;color:var(--ink-soft);}
+  .legend-inline i{
+    display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px;
+  }
+  .miss{color:#b06a44;font-weight:600;}
+
+  .chart-fallback{
+    display:flex;align-items:center;justify-content:center;height:100%;min-height:120px;
+    padding:18px;text-align:center;font-size:12.5px;line-height:1.7;color:#a5534f;
+    background:#fdf7f3;border:1px dashed #e9c9b4;border-radius:10px;
+  }
+
+  @media (max-width:1100px){
+    .layout{grid-template-columns:minmax(0,1fr);padding:14px 12px 32px;}
+    .splitter{display:none;}
+    .col.left{position:static;}
+    .chart-box{height:300px;}
+    .chart-box.tall{height:380px;}
+  }
+  @media (max-width:520px){
+    .hero{padding:18px 14px;}
+    .chart-box{height:280px;}
+    .chart-box.tall{height:400px;}
+    table{font-size:11px;}
+    th,td{padding:5px 4px;}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="kicker">Motor Biomechanics · Interactive Paper Reader</div>
+    <h1>双侧落地时，与 ACL 损伤相关的峰值生物力学变量究竟出现在膝屈曲多少度上？</h1>
+    <p class="lead">
+      29 名休闲运动员（14 女 / 15 男）在 40 cm 跳箱双侧落地任务中，比较「性别 × 疲劳」四组在
+      <b>峰值膝外翻角、峰值垂直地面反作用力、峰值股直肌 / 股内侧肌 / 内・外侧腘绳肌 NEMG 出现时的膝屈曲角</b>；
+      论文的核心发现是：这些峰值<strong>全部出现在膝屈曲 &gt; 40° 的落地后期</strong>，而不是 ACL 最易受伤的 &lt; 40° 初始期。
+    </p>
+    <div class="badges">
+      <span class="badge">数据来源：<b>正文 Methods + Results</b>（Pappas et al. 2009, NAJSPT 4(2):83–91）</span>
+      <span class="badge">图形结构对应：<b>图 2–7</b></span>
+      <span class="badge">样本：<b>n = 29</b>（14 女 / 15 男）</span>
+      <span class="badge warn">图内标注数值未逐点读取：页面中标注「论文未给出」的项即缺此项</span>
+    </div>
+  </div>
+</header>
+
+<main class="layout" id="layout">
+  <!-- ============ 左栏 ============ -->
+  <div class="col left">
+    <section class="card">
+      <h2>目录</h2>
+      <nav class="toc">
+        <ol>
+          <li><a href="#sec-flow">研究流程（实验时序）</a></li>
+          <li><a href="#sec-c1">图 1 · 四组峰值出现角谱（四联联动）</a></li>
+          <li><a href="#sec-c2">图 2 · 组间对比（误差棒 + 显著性）</a></li>
+          <li><a href="#sec-c3">图 3 · 性别 × 疲劳交互效应</a></li>
+          <li><a href="#sec-c4">图 4 · 峰值在落地周期中的位置</a></li>
+          <li><a href="#sec-table">统计附表</a></li>
+          <li><a href="#sec-concl">结论（论文原文）</a></li>
+          <li><a href="#sec-missing">论文未给出的数据</a></li>
+        </ol>
+      </nav>
+    </section>
+
+    <section class="card" id="sec-concl">
+      <h2>结论（仅取自论文）</h2>
+      <ol class="concl">
+        <li>论文所考察的全部生物力学变量（膝外翻角、VGRF、股直肌、股内侧肌、内侧与外侧腘绳肌 NEMG）的峰值，
+            都出现在膝屈曲 <b>&gt; 40°</b> 的落地后期。</li>
+        <li>MANOVA：性别主效应（p = 0.053）与疲劳主效应（p = 0.119）均未达显著，
+            但<b>性别 × 疲劳交互作用显著</b>（p &lt; 0.05）。</li>
+        <li>交互效应只出现在两个变量上：女性疲劳后峰值 VGRF 出现角<b>减小 5.6°</b>（52.7° → 47.1°，p &lt; 0.05）；
+            男性疲劳后峰值外侧腘绳肌 NEMG 出现角<b>增大约 11°</b>（62.2° → 73.7°，p = 0.003）。</li>
+        <li>因此，作者认为「只看全周期峰值」的方法可能没有充分反映膝屈曲角对 ACL 应变的影响
+            —— 屈曲 &lt; 40° 时 ACL 更易受损。</li>
+        <li>作者对男性的外侧腘绳肌结果持保留态度：该峰值出现在 &gt; 60° 的很晚阶段，临床意义可能有限；
+            而女性疲劳后 VGRF 峰值更接近高危角度，被认为更具临床相关性。</li>
+      </ol>
+      <p class="cap">以上均为论文 Discussion / Conclusion 的表述，未做外推。</p>
+    </section>
+  </div>
+
+  <div class="splitter" data-side="left" title="拖拽调整左栏宽度"></div>
+
+  <!-- ============ 中栏 ============ -->
+  <div class="col mid">
+
+    <section class="card" id="sec-flow">
+      <h2><span class="num">1</span>研究流程 · 按 Methods 还原的实验时序</h2>
+      <p class="sub">单次测试内完成「预疲劳落地 → 疲劳方案 → 后疲劳落地」全流程。所有数值均出自正文 Methods。</p>
+      <div class="timeline">
+        <div class="step">
+          <div class="idx">STEP 01</div>
+          <h4>受试者</h4>
+          <p>休闲运动员，20–40 岁；每周运动 ≥ 2 次、每次 ≥ 45 min；排除 BMI &gt; 30、下肢伤史、体操 / 舞蹈专项训练者。</p>
+          <span class="val">n = 29（女 14 / 男 15）</span>
+        </div>
+        <div class="step">
+          <div class="idx">STEP 02</div>
+          <h4>仪器与贴点</h4>
+          <p>Noraxon Myosystem 1400 表面 EMG（股直肌、股内侧肌、内 / 外侧腘绳肌，极间距 20 mm）；8 台 Eagle 相机；AMTI OR6-5 测力台。</p>
+          <span class="val">EMG / 动力 1200 Hz；运动学 240 Hz</span>
+        </div>
+        <div class="step">
+          <div class="idx">STEP 03</div>
+          <h4>预疲劳落地</h4>
+          <p>2 次练习后，从 40 cm 跳箱垂直下落、双脚落于测力台；双手抱胸；不做技术指导（避免教练效应）。</p>
+          <span class="val">3 次有效落地</span>
+        </div>
+        <div class="step">
+          <div class="idx">STEP 04</div>
+          <h4>疲劳方案</h4>
+          <p>连续跨越 5 个 5–7 cm 障碍 × 20 组 = 100 次跳；随后 50 次最大垂直跳。</p>
+          <span class="val">共 150 次跳</span>
+        </div>
+        <div class="step">
+          <div class="idx">STEP 05</div>
+          <h4>后疲劳落地</h4>
+          <p>电极导线重新连接，重复同样的 3 次落地评估。</p>
+          <span class="val">疲劳后 6 分钟内完成</span>
+        </div>
+        <div class="step">
+          <div class="idx">STEP 06</div>
+          <h4>数据处理</h4>
+          <p>运动学：4 阶 Butterworth 低通 6 Hz；EMG：6 阶带通 10–500 Hz；NEMG 以 20 cm 平台落地的最大线性包络 EMG 归一化（3 次均值）；VGRF 以体重归一化。</p>
+          <span class="val">3 次试次取均值</span>
+        </div>
+        <div class="step">
+          <div class="idx">STEP 07</div>
+          <h4>统计</h4>
+          <p>SPSS 12.0；2（性别）× 2（疲劳）重复测量 MANOVA，显著后做单变量 repeated-measures ANOVA；α = 0.05。仅分析右侧（优势）下肢。</p>
+          <span class="val">MANOVA df = 7:21 / 7:20</span>
+        </div>
+      </div>
+      <p class="note">说明：分组命名严格沿用论文 —— 性别（Male / Female）× 疲劳（Pre-fatigue 非疲劳 / Post-fatigue 疲劳），
+        本页简写为「男·前 / 男·后 / 女·前 / 女·后」。论文正文对样本写作「14 females and 15 females」，按后文描述应为 15 名男性，此处按 14 女 / 15 男理解并标注存疑。</p>
+    </section>
+
+    <!-- 图 1 -->
+    <section class="card chart-card" id="sec-c1">
+      <div class="card-head">
+        <h2><span class="num">2</span>四组「峰值出现时的膝屈曲角」谱（四联联动）</h2>
+        <button class="btn" data-export="c1" data-name="峰值出现角谱">⤓ 导出 PNG</button>
+      </div>
+      <p class="sub">对应论文图 2–5 的分组结构（四种性别 × 疲劳组合各一张）：纵轴为峰值出现时的膝屈曲角，
+        红色区为论文定义的 ACL 高危区（&lt; 40°）。悬停任一子图，四张子图的 tooltip 会同步联动。</p>
+      <div class="chart-box tall" id="c1"></div>
+      <div class="legend-inline">
+        <span><i style="background:#2c5f8a"></i>垂直地面反作用力 (VGRF)</span>
+        <span><i style="background:#a9713f"></i>外侧腘绳肌 NEMG</span>
+        <span><i style="background:#c0504d;opacity:.25"></i>ACL 高危区 &lt; 40°</span>
+      </div>
+      <p class="note">论文图 2–5 还包含<b>膝外翻角、股直肌、股内侧肌、内侧腘绳肌</b>的峰值出现角，但正文 Results 只给出了 VGRF 与外侧腘绳肌的均值 ± SD，
+        其余变量正文未给数值 —— 本图不填、不估，留空并在此说明。误差棒为 ± 1 SD（论文原文给出）。</p>
+    </section>
+
+    <!-- 图 2 -->
+    <section class="card chart-card" id="sec-c2">
+      <div class="card-head">
+        <h2><span class="num">3</span>组间对比 · 误差棒与显著性（对应图 6、图 7）</h2>
+        <button class="btn" data-export="c2" data-name="组间对比">⤓ 导出 PNG</button>
+      </div>
+      <p class="sub">左：峰值 VGRF 出现角；右：峰值外侧腘绳肌 NEMG 出现角。误差棒为 ± 1 SD，横线为单变量 ANOVA 的显著组间差异。
+        悬停查看均值 ± SD，图例可点击隐藏 / 显示系列。</p>
+      <div class="chart-box" id="c2"></div>
+      <p class="note">显著性标注直接对应正文：VGRF 的性别 × 疲劳交互 <b>p &lt; 0.05</b>（由非疲劳女性 52.7° 降至疲劳女性 47.1°）；
+        外侧腘绳肌 <b>p = 0.003</b>（非疲劳男性 62.2° 升至疲劳男性 73.7°）。
+        正文另称男性 VGRF 出现角「增加 1°」，而 Discussion 写作「增加 0.8°」；按给出的一对均值 48.8° → 49.6° 计算实为 +0.8°，本页按实测差值标注，
+        差异已在附表中注明。</p>
+    </section>
+
+    <!-- 图 3 -->
+    <section class="card chart-card" id="sec-c3">
+      <div class="card-head">
+        <h2><span class="num">4</span>性别 × 疲劳交互效应（前后对比）</h2>
+        <button class="btn" data-export="c3" data-name="交互效应">⤓ 导出 PNG</button>
+      </div>
+      <p class="sub">横轴为疲劳状态（疲劳前 = 论文的 Pre-fatigue / non-fatigued，疲劳后 = Post-fatigue / fatigued），实线为 VGRF、虚线为外侧腘绳肌；性别分色。两条线若交叉或方向相反，即交互作用的表现。
+        图例可点击隐藏 / 显示任意系列。</p>
+      <div class="chart-box" id="c3"></div>
+      <p class="note">读图要点：<b>VGRF</b> 上男性（蓝）略升、女性（棕）明显下降 —— 女性疲劳后向 &lt; 40° 高危区靠近 5.6°；
+        <b>外侧腘绳肌</b>上男性大幅升高约 11.5°、女性小幅下降约 2.8°。两者方向相反即构成论文报告的显著交互。</p>
+    </section>
+
+    <!-- 图 4 -->
+    <section class="card chart-card" id="sec-c4">
+      <div class="card-head">
+        <h2><span class="num">5</span>峰值在落地周期中的位置（&lt; 40° 高危区 vs &gt; 40° 后期）</h2>
+        <button class="btn" data-export="c4" data-name="落地周期位置">⤓ 导出 PNG</button>
+      </div>
+      <p class="sub">横轴为膝屈曲角（0–100°），每一行是一组；红色阴影为论文定义的初始期高危区（&lt; 40°）。
+        点的位置越靠左，越接近 ACL 易损角度。</p>
+      <div class="chart-box" id="c4"></div>
+      <p class="note">论文结果显示：<b>没有任何一个被考察的峰值落在 &lt; 40° 区间</b>；
+        四组中最靠左的是疲劳女性峰值 VGRF（47.1°），这也是作者认为最具临床意义的一点。点标签为正文给出的均值。</p>
+    </section>
+  </div>
+
+  <div class="splitter" data-side="right" title="拖拽调整右栏宽度"></div>
+
+  <!-- ============ 右栏 ============ -->
+  <div class="col right">
+
+    <section class="card" id="sec-table">
+      <h2>统计附表 · 正文可读精确数值</h2>
+      <p class="sub">全部数值逐字取自正文 Results（mean ± SD，单位：度）。</p>
+      <div class="tbl-scroll">
+        <table>
+          <caption class="cap" style="caption-side:top;text-align:left;">表 1 · 峰值出现时的膝屈曲角（°, mean ± SD）</caption>
+          <thead>
+            <tr>
+              <th style="width:30%">变量 / 组</th>
+              <th class="num" style="width:24%">非疲劳（前）</th>
+              <th class="num" style="width:24%">疲劳（后）</th>
+              <th class="num" style="width:22%">前后变化</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><th colspan="4" style="background:#f0f6fa;color:#2c5f8a;">峰值垂直地面反作用力（VGRF）出现角</th></tr>
+            <tr><td>男性</td><td class="num">48.8 ± 13</td><td class="num">49.6 ± 15</td><td class="num">+0.8</td></tr>
+            <tr><td>女性</td><td class="num">52.7 ± 11</td><td class="num">47.1 ± 11</td><td class="num sig">−5.6 *</td></tr>
+            <tr><th colspan="4" style="background:#faf4ee;color:#a9713f;">峰值外侧腘绳肌 NEMG 出现角</th></tr>
+            <tr><td>男性</td><td class="num">62.2 ± 19</td><td class="num">73.7 ± 21</td><td class="num sig">+11.5 **</td></tr>
+            <tr><td>女性</td><td class="num">77.8 ± 16</td><td class="num">75 ± 15</td><td class="num">−2.8</td></tr>
+          </tbody>
+        </table>
+
+        <table style="margin-top:16px;">
+          <caption class="cap" style="caption-side:top;text-align:left;">表 2 · 重复测量 MANOVA（峰值出现角的膝屈曲度）</caption>
+          <thead>
+            <tr><th style="width:40%">效应</th><th class="num">df</th><th class="num">F</th><th class="num">p</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>性别（男 / 女）</td><td class="num">7 : 21</td><td class="num">2.44</td><td class="num ns">0.053</td></tr>
+            <tr><td>疲劳（前 / 后）</td><td class="num">7 : 21</td><td class="num">1.91</td><td class="num ns">0.119</td></tr>
+            <tr><td>性别 × 疲劳</td><td class="num">7 : 20</td><td class="num">4.80</td><td class="num sig">&lt; 0.05</td></tr>
+          </tbody>
+        </table>
+
+        <table style="margin-top:16px;">
+          <caption class="cap" style="caption-side:top;text-align:left;">表 3 · 单变量 ANOVA 追认结果</caption>
+          <thead>
+            <tr><th style="width:58%">变量</th><th class="num">p</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>峰值 VGRF 出现时的膝屈曲角</td><td class="num sig">&lt; 0.05</td></tr>
+            <tr><td>峰值外侧腘绳肌 NEMG 出现角</td><td class="num sig">0.003</td></tr>
+            <tr><td>其余变量（膝外翻、股直肌、股内侧肌、内侧腘绳肌）</td><td class="num ns">论文未给出</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="cap">
+        * p &lt; 0.05；** p = 0.003。显著性符号按正文标注复刻。<br>
+        注：正文 Results 写男性 VGRF 出现角「increased by 1°」，Discussion 写「increased by 0.8°」，
+        而给出的均值对为 48.8 → 49.6（差 +0.8）；本表按均值计算值 +0.8 列出，并在上方图表中同样标注该差异。<br>
+        注：正文写作「14 females and 15 females」，与后续「males / females」对照可判断后者应为 15 名男性，属原文笔误。
+      </p>
+    </section>
+
+    <section class="card" id="sec-missing">
+      <h2>论文未给出的数据</h2>
+      <p class="sub">以下内容在正文文字（Methods / Results / Discussion）中<b>没有</b>给出数值，本页不填补、不推测。</p>
+      <ul style="margin:0;padding-left:18px;font-size:12.5px;color:var(--ink-soft);">
+        <li><span class="miss">膝外翻角</span>峰值出现时的膝屈曲角 —— 图 2–5 中有，正文无数字</li>
+        <li><span class="miss">股直肌 NEMG</span>峰值出现角 —— 同上</li>
+        <li><span class="miss">股内侧肌 NEMG</span>峰值出现角 —— 同上</li>
+        <li><span class="miss">内侧腘绳肌 NEMG</span>峰值出现角 —— 同上</li>
+        <li><span class="miss">四组的实际峰值大小</span>（° / BW / %MVIC）—— 论文只报告「峰值出现在多少度」，不报告峰值本身</li>
+        <li><span class="miss">时间序列曲线</span>（落地周期内的 VGRF / EMG 波形）—— 论文未提供，因此本页不做随时间变化的波形图</li>
+        <li><span class="miss">受试者身高 / 体重 / BMI 均值</span> —— 正文仅说明测量了这些指标</li>
+        <li><span class="miss">疲劳的客观指标</span>（如血乳酸、跳跃高度衰减）—— 作者在 Limitations 中明确承认未使用</li>
+      </ul>
+      <p class="note warn"><b>关于「示意值」：</b>本页<b>没有任何示意值或估算值</b>。
+        所有柱高、误差棒、显著性标注、附表数字都来自正文文字。论文未给出的一律留空并标注「论文未给出」。</p>
+    </section>
+
+    <section class="card">
+      <h2>阅读辅助</h2>
+      <ul style="margin:0;padding-left:18px;font-size:12.5px;color:var(--ink-soft);">
+        <li><b>初始期（初始落地相）</b>：膝屈曲 &lt; 40°，论文引用文献指出 ACL 损伤多发生于此。</li>
+        <li><b>落地后期</b>：膝屈曲 &gt; 40°，本研究所有峰值实际出现的位置。</li>
+        <li><b>VGRF</b>：垂直地面反作用力，以体重归一化。</li>
+        <li><b>NEMG</b>：归一化肌电振幅，以 20 cm 平台落地的最大线性包络 EMG 为参考。</li>
+        <li><b>交互作用</b>：性别效应随疲劳状态而改变，即两条线不平行。</li>
+      </ul>
+    </section>
+  </div>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------------- 数据（全部来自正文 Results） ---------------- */
+  var GROUPS = [
+    { label: "非疲劳 · 男性", short: "男·前", sex: "男", fat: "前" },
+    { label: "疲劳 · 男性",   short: "男·后", sex: "男", fat: "后" },
+    { label: "非疲劳 · 女性", short: "女·前", sex: "女", fat: "前" },
+    { label: "疲劳 · 女性",   short: "女·后", sex: "女", fat: "后" }
+  ];
+
+  var VGRF = {
+    name: "VGRF",
+    full: "垂直地面反作用力 (VGRF)",
+    color: "#2c5f8a",
+    mean: [48.8, 49.6, 52.7, 47.1],
+    sd:   [13,   15,   11,   11]
+  };
+  var LH = {
+    name: "外侧腘绳肌",
+    full: "外侧腘绳肌 NEMG",
+    color: "#a9713f",
+    mean: [62.2, 73.7, 77.8, 75.0],
+    sd:   [19,   21,   16,   15]
+  };
+
+  var DANGER = "#c0504d";
+  var FONT = '"Segoe UI","PingFang SC","Microsoft YaHei",system-ui,sans-serif';
+
+  var charts = {};
+
+  if (!window.echarts) {
+    document.querySelectorAll('.chart-box').forEach(function (el) {
+      el.innerHTML = '<div class="chart-fallback">图表库（ECharts CDN）未能加载。<br>请确认设备可联网后刷新页面；如需完全离线使用，把 echarts.min.js 下载到同一目录并改成 &lt;script src="echarts.min.js"&gt;。</div>';
+    });
+    return;
+  }
+
+  function init(id, option) {
+    var el = document.getElementById(id);
+    if (!el) return null;
+    var c = echarts.init(el, null, { renderer: "canvas" });
+    c.setOption(option);
+    charts[id] = c;
+    return c;
+  }
+
+  /* 误差棒：用 markLine 的两点连线在类目轴中心画竖向线段 */
+  function errorBars(cats, means, sds, color) {
+    return cats.map(function (cat, i) {
+      return [
+        { coord: [cat, means[i] - sds[i]] },
+        { coord: [cat, means[i] + sds[i]] }
+      ];
+    });
+  }
+
+
+  /* 渲染兜底：单个图表失败不影响其他图表 */
+  function safe(id, fn) {
+    try {
+      fn();
+    } catch (err) {
+      if (window.console && console.error) console.error(id, err);
+      var el = document.getElementById(id);
+      if (el) el.innerHTML = '<div class="chart-fallback">图表渲染失败：' + (err && err.message ? err.message : err) + '</div>';
+    }
+  }
+
+  /* ---------------- 图 1：四联子图 ---------------- */
+  safe("c1", function chart1() {
+    var CATS = ["VGRF", "外侧腘绳肌 NEMG"];
+    var grids = [
+      { left: "9%",  top: "16%", width: "37%", height: "31%" },
+      { left: "58%", top: "16%", width: "37%", height: "31%" },
+      { left: "9%",  top: "63%", width: "37%", height: "31%" },
+      { left: "58%", top: "63%", width: "37%", height: "31%" }
+    ];
+    var titles = GROUPS.map(function (g, i) {
+      return {
+        text: g.label,
+        left: grids[i].left,
+        top: (i < 2 ? "6%" : "53%"),
+        textStyle: { fontSize: 12.5, fontWeight: 600, color: i % 2 === 0 ? "#1f3f5c" : "#8c5a3c" }
+      };
+    });
+
+    var xAxis = [], yAxis = [], series = [];
+    GROUPS.forEach(function (g, i) {
+      xAxis.push({
+        type: "category", gridIndex: i, data: CATS,
+        axisLabel: { fontSize: 11, color: "#5a6b78" },
+        axisLine: { lineStyle: { color: "#dbe3eb" } },
+        axisTick: { show: false },
+        axisPointer: { type: "shadow" }
+      });
+      yAxis.push({
+        type: "value", gridIndex: i, min: 0, max: 100,
+        name: i % 2 === 0 ? "膝屈曲角 (°)" : "",
+        nameTextStyle: { fontSize: 11, color: "#8494a1" },
+        splitLine: { lineStyle: { color: "#eef2f6" } },
+        axisLabel: { fontSize: 10.5, color: "#8494a1" }
+      });
+
+      series.push({
+        name: g.label,
+        type: "bar",
+        xAxisIndex: i, yAxisIndex: i,
+        barWidth: 34,
+        itemStyle: { borderRadius: [5, 5, 0, 0] },
+        label: {
+          show: true, position: "top",
+          formatter: "{c}°", fontSize: 11, fontWeight: 600, color: "#3c4b57"
+        },
+        data: [
+          { value: VGRF.mean[i], sd: VGRF.sd[i], itemStyle: { color: VGRF.color } },
+          { value: LH.mean[i],   sd: LH.sd[i],   itemStyle: { color: LH.color } }
+        ],
+        markLine: {
+          silent: true,
+          symbol: ["none", "none"],
+          label: { show: false },
+          lineStyle: { color: "#55636f", width: 1.1, type: "solid" },
+          data: errorBars(CATS, [VGRF.mean[i], LH.mean[i]], [VGRF.sd[i], LH.sd[i]])
+        },
+        markArea: {
+          silent: true,
+          itemStyle: { color: "rgba(192,80,77,0.09)" },
+          label: i % 2 === 0
+            ? { show: true, position: "insideTopLeft", fontSize: 10, color: "#a5534f", formatter: "ACL 高危区 < 40°" }
+            : { show: false },
+          data: [[{ yAxis: 0 }, { yAxis: 40 }]]
+        }
+      });
+    });
+
+    init("c1", {
+      textStyle: { fontFamily: FONT },
+      title: titles,
+      tooltip: {
+        trigger: "axis",
+        axisPointer: { type: "shadow", shadowStyle: { color: "rgba(44,95,138,0.06)" } },
+        formatter: function (params) {
+          if (!params || !params.length) return "";
+          var p = params[0];
+          var g = GROUPS[p.seriesIndex] || GROUPS[0];
+          var out = "<b>" + g.label + "</b><br/>";
+          params.forEach(function (it) {
+            var d = it.data || {};
+            out += it.marker + " " + it.name + "：" +
+                   (typeof d.value === "number" ? d.value : "-") +
+                   (typeof d.sd === "number" ? " ± " + d.sd + "°" : "") + "<br/>";
+          });
+          return out;
+        }
+      },
+      axisPointer: { link: [{ xAxisIndex: "all" }], label: { fontSize: 10 } },
+      grid: grids,
+      xAxis: xAxis,
+      yAxis: yAxis,
+      series: series
+    });
+  });
+
+  /* ---------------- 图 2：组间对比 + 误差棒 + 显著性 ---------------- */
+  safe("c2", function chart2() {
+    var cats = GROUPS.map(function (g) { return g.short; });
+    var names = GROUPS.map(function (g) { return g.label; });
+
+    function palette(i) {
+      return i < 2 ? (i === 0 ? "#2c5f8a" : "#88b2d3") : (i === 2 ? "#a9713f" : "#dcbb9b");
+    }
+
+    init("c2", {
+      textStyle: { fontFamily: FONT },
+      title: [
+        { text: "峰值 VGRF 出现角", left: "9%", top: 2, textStyle: { fontSize: 12.5, color: "#1f3f5c" } },
+        { text: "峰值外侧腘绳肌 NEMG 出现角", left: "57%", top: 2, textStyle: { fontSize: 12.5, color: "#8c5a3c" } }
+      ],
+      legend: {
+        bottom: 2, left: "center", itemWidth: 11, itemHeight: 11, itemGap: 16,
+        textStyle: { fontSize: 11, color: "#5a6b78" },
+        data: ["垂直地面反作用力 (VGRF)", "外侧腘绳肌 NEMG"]
+      },
+      tooltip: {
+        trigger: "axis",
+        axisPointer: { type: "shadow", shadowStyle: { color: "rgba(44,95,138,0.06)" } },
+        formatter: function (params) {
+          if (!params || !params.length) return "";
+          var bar = params.filter(function (x) { return x.seriesType === "bar"; })[0];
+          if (!bar) return "";
+          var d = bar.data || {};
+          return "<b>" + names[bar.dataIndex] + "</b><br/>" + bar.marker + " " +
+                 (bar.seriesName === "外侧腘绳肌 NEMG" ? "外侧腘绳肌 NEMG" : "VGRF") +
+                 "：" + d.value + " ± " + d.sd + "°";
+        }
+      },
+      grid: [
+        { left: "9%", right: "57%", top: "14%", height: "66%" },
+        { left: "57%", right: "9%", top: "14%", height: "66%" }
+      ],
+      xAxis: [
+        { type: "category", gridIndex: 0, data: cats, axisTick: { show: false },
+          axisLine: { lineStyle: { color: "#dbe3eb" } },
+          axisLabel: { fontSize: 11, color: "#5a6b78", interval: 0 }, axisPointer: { type: "shadow" } },
+        { type: "category", gridIndex: 1, data: cats, axisTick: { show: false },
+          axisLine: { lineStyle: { color: "#dbe3eb" } },
+          axisLabel: { fontSize: 11, color: "#5a6b78", interval: 0 }, axisPointer: { type: "shadow" } }
+      ],
+      yAxis: [
+        { type: "value", gridIndex: 0, min: 0, max: 105, name: "膝屈曲角 (°)",
+          nameTextStyle: { fontSize: 11, color: "#8494a1" },
+          splitLine: { lineStyle: { color: "#eef2f6" } },
+          axisLabel: { fontSize: 10.5, color: "#8494a1" } },
+        { type: "value", gridIndex: 1, min: 0, max: 105,
+          splitLine: { lineStyle: { color: "#eef2f6" } },
+          axisLabel: { fontSize: 10.5, color: "#8494a1" } }
+      ],
+      series: [
+        {
+          name: "垂直地面反作用力 (VGRF)",
+          type: "bar", xAxisIndex: 0, yAxisIndex: 0, barWidth: 34,
+          itemStyle: { borderRadius: [5, 5, 0, 0] },
+          label: { show: true, position: "top", formatter: "{c}°", fontSize: 11, fontWeight: 600, color: "#3c4b57" },
+          data: VGRF.mean.map(function (v, i) {
+            return { value: v, sd: VGRF.sd[i], itemStyle: { color: palette(i) } };
+          }),
+          markLine: {
+            silent: true, symbol: ["none", "none"], label: { show: false },
+            lineStyle: { color: "#55636f", width: 1.1 },
+            data: errorBars(cats, VGRF.mean, VGRF.sd)
+          },
+          markArea: {
+            silent: true, itemStyle: { color: "rgba(192,80,77,0.07)" },
+            label: { show: true, position: "insideTopLeft", fontSize: 10, color: "#a5534f", formatter: "高危区 < 40°" },
+            data: [[{ yAxis: 0 }, { yAxis: 40 }]]
+          }
+        },
+        {
+          name: "外侧腘绳肌 NEMG",
+          type: "bar", xAxisIndex: 1, yAxisIndex: 1, barWidth: 34,
+          itemStyle: { borderRadius: [5, 5, 0, 0] },
+          label: { show: true, position: "top", formatter: "{c}°", fontSize: 11, fontWeight: 600, color: "#3c4b57" },
+          data: LH.mean.map(function (v, i) {
+            return { value: v, sd: LH.sd[i], itemStyle: { color: palette(i) } };
+          }),
+          markLine: {
+            silent: true, symbol: ["none", "none"], label: { show: false },
+            lineStyle: { color: "#55636f", width: 1.1 },
+            data: errorBars(cats, LH.mean, LH.sd)
+          },
+          markArea: {
+            silent: true, itemStyle: { color: "rgba(192,80,77,0.07)" },
+            label: { show: true, position: "insideTopLeft", fontSize: 10, color: "#a5534f", formatter: "高危区 < 40°" },
+            data: [[{ yAxis: 0 }, { yAxis: 40 }]]
+          }
+        },
+        /* --- 显著性标注辅助线（左面板：女·前 vs 女·后，p < 0.05） --- */
+        {
+          name: "显著性(左)", type: "line", xAxisIndex: 0, yAxisIndex: 0,
+          data: [null, null, 74, 74],
+          symbol: "none", showSymbol: false, silent: true, z: 6,
+          lineStyle: { color: DANGER, width: 1.6, type: "solid" },
+          label: {
+            show: true, position: "top", color: DANGER, fontSize: 11, fontWeight: 700,
+            formatter: function (p) { return p.dataIndex === 3 ? "p < 0.05" : ""; }
+          }
+        },
+        /* --- 显著性标注辅助线（右面板：男·前 vs 男·后，p = 0.003） --- */
+        {
+          name: "显著性(右)", type: "line", xAxisIndex: 1, yAxisIndex: 1,
+          data: [97, 97, null, null],
+          symbol: "none", showSymbol: false, silent: true, z: 6,
+          lineStyle: { color: DANGER, width: 1.6, type: "solid" },
+          label: {
+            show: true, position: "top", color: DANGER, fontSize: 11, fontWeight: 700,
+            formatter: function (p) { return p.dataIndex === 1 ? "p = 0.003" : ""; }
+          }
+        }
+      ]
+    });
+  });
+
+  /* ---------------- 图 3：交互效应 ---------------- */
+  safe("c3", function chart3() {
+    init("c3", {
+      textStyle: { fontFamily: FONT },
+      legend: {
+        top: 4, left: "center", itemWidth: 16, itemHeight: 9, itemGap: 14,
+        textStyle: { fontSize: 11.5, color: "#5a6b78" }
+      },
+      tooltip: {
+        trigger: "axis",
+        formatter: function (params) {
+          if (!params || !params.length) return "";
+          var out = "<b>" + params[0].axisValue + "</b><br/>";
+          params.forEach(function (p) {
+            out += p.marker + " " + p.seriesName + "：" + p.value + "°<br/>";
+          });
+          return out;
+        }
+      },
+      grid: { left: "8%", right: "6%", top: "18%", bottom: "12%" },
+      xAxis: {
+        type: "category",
+        boundaryGap: false,
+        data: ["疲劳前", "疲劳后"],
+        axisTick: { show: false },
+        axisLine: { lineStyle: { color: "#dbe3eb" } },
+        axisLabel: { fontSize: 12, color: "#5a6b78" }
+      },
+      yAxis: {
+        type: "value", min: 0, max: 90,
+        name: "峰值出现时的膝屈曲角 (°)",
+        nameTextStyle: { fontSize: 11, color: "#8494a1", padding: [0, 0, 6, 0] },
+        splitLine: { lineStyle: { color: "#eef2f6" } },
+        axisLabel: { fontSize: 10.5, color: "#8494a1" }
+      },
+      series: [
+        {
+          name: "VGRF · 男性", type: "line", smooth: false, symbolSize: 8,
+          lineStyle: { width: 2.6, color: "#2c5f8a" }, itemStyle: { color: "#2c5f8a" },
+          label: { show: true, position: "bottom", formatter: "{c}°", fontSize: 11, fontWeight: 600, color: "#2c5f8a" },
+          labelLayout: { hideOverlap: true },
+          data: [VGRF.mean[0], VGRF.mean[1]],
+          markArea: {
+            silent: true, itemStyle: { color: "rgba(192,80,77,0.09)" },
+            label: { show: true, position: "insideBottomLeft", fontSize: 10, color: "#a5534f", formatter: "ACL 高危区 < 40°" },
+            data: [[{ yAxis: 0 }, { yAxis: 40 }]]
+          }
+        },
+        {
+          name: "VGRF · 女性", type: "line", smooth: false, symbolSize: 8,
+          lineStyle: { width: 2.6, color: "#a9713f" }, itemStyle: { color: "#a9713f" },
+          label: { show: true, position: "top", formatter: "{c}°", fontSize: 11, fontWeight: 600, color: "#a9713f" },
+          labelLayout: { hideOverlap: true },
+          data: [VGRF.mean[2], VGRF.mean[3]]
+        },
+        {
+          name: "外侧腘绳肌 · 男性", type: "line", smooth: false, symbolSize: 7,
+          lineStyle: { width: 2.2, type: "dashed", color: "#4a86b5" }, itemStyle: { color: "#4a86b5" },
+          label: { show: true, position: "bottom", formatter: "{c}°", fontSize: 10.5, color: "#4a86b5" },
+          labelLayout: { hideOverlap: true },
+          data: [LH.mean[0], LH.mean[1]]
+        },
+        {
+          name: "外侧腘绳肌 · 女性", type: "line", smooth: false, symbolSize: 7,
+          lineStyle: { width: 2.2, type: "dashed", color: "#c08a55" }, itemStyle: { color: "#c08a55" },
+          label: { show: true, position: "top", formatter: "{c}°", fontSize: 10.5, color: "#a9713f" },
+          labelLayout: { hideOverlap: true },
+          data: [LH.mean[2], LH.mean[3]]
+        }
+      ]
+    });
+  });
+
+  /* ---------------- 图 4：落地周期中的位置 ---------------- */
+  safe("c4", function chart4() {
+    init("c4", {
+      textStyle: { fontFamily: FONT },
+      legend: {
+        top: 4, left: "center", itemWidth: 11, itemHeight: 11, itemGap: 14,
+        textStyle: { fontSize: 11.5, color: "#5a6b78" }
+      },
+      tooltip: {
+        trigger: "item",
+        formatter: function (p) {
+          return "<b>" + p.seriesName + "</b><br/>" + p.name + "：膝屈曲 " + p.value[0] + "°";
+        }
+      },
+      grid: { left: "22%", right: "8%", top: "18%", bottom: "12%" },
+      xAxis: {
+        type: "value", min: 30, max: 100,
+        name: "峰值出现时的膝屈曲角 (°)",
+        nameLocation: "middle", nameGap: 26,
+        nameTextStyle: { fontSize: 11, color: "#8494a1" },
+        splitLine: { lineStyle: { color: "#eef2f6" } },
+        axisLabel: { fontSize: 10.5, color: "#8494a1" }
+      },
+      yAxis: {
+        type: "category",
+        data: GROUPS.map(function (g) { return g.label; }),
+        axisTick: { show: false },
+        axisLine: { lineStyle: { color: "#dbe3eb" } },
+        axisLabel: { fontSize: 11.5, color: "#5a6b78" }
+      },
+      series: [
+        {
+          name: "VGRF", type: "scatter", symbolSize: 13,
+          itemStyle: { color: "#2c5f8a", borderColor: "#fff", borderWidth: 1.5 },
+          label: { show: true, position: "top", formatter: function (p) { return p.value[0] + "°"; },
+                   fontSize: 11, fontWeight: 600, color: "#2c5f8a" },
+                   labelLayout: { hideOverlap: true },
+          data: VGRF.mean.map(function (v, i) { return [v, i]; }),
+          markArea: {
+            silent: true, itemStyle: { color: "rgba(192,80,77,0.1)" },
+            label: { show: true, position: "insideTop", fontSize: 10, color: "#a5534f", formatter: "ACL 高危区\n< 40°" },
+            data: [[{ xAxis: 30 }, { xAxis: 40 }]]
+          },
+          markLine: {
+            silent: true, symbol: ["none", "none"],
+            lineStyle: { color: DANGER, width: 1.4, type: "dashed" },
+            label: { show: true, position: "end", formatter: "40° 阈值", fontSize: 10, color: DANGER },
+            data: [{ xAxis: 40 }]
+          }
+        },
+        {
+          name: "外侧腘绳肌 NEMG", type: "scatter", symbolSize: 13,
+          itemStyle: { color: "#a9713f", borderColor: "#fff", borderWidth: 1.5 },
+          label: { show: true, position: "bottom", formatter: function (p) { return p.value[0] + "°"; },
+                   fontSize: 11, fontWeight: 600, color: "#a9713f" },
+                   labelLayout: { hideOverlap: true },
+          data: LH.mean.map(function (v, i) { return [v, i]; })
+        }
+      ]
+    });
+  });
+
+  /* ---------------- 导出 PNG ---------------- */
+  document.querySelectorAll("[data-export]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var id = btn.getAttribute("data-export");
+      var chart = charts[id];
+      if (!chart) return;
+      var url = chart.getDataURL({ type: "png", pixelRatio: 3, backgroundColor: "#ffffff" });
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = (btn.getAttribute("data-name") || id) + ".png";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      var old = btn.textContent;
+      btn.textContent = "✓ 已导出";
+      setTimeout(function () { btn.textContent = old; }, 1400);
+    });
+  });
+
+  /* ---------------- 自适应重绘 ---------------- */
+  var ro = null;
+  if (typeof ResizeObserver !== "undefined") {
+    ro = new ResizeObserver(function () {
+      requestAnimationFrame(function () {
+        Object.keys(charts).forEach(function (k) { charts[k].resize(); });
+      });
+    });
+    document.querySelectorAll(".chart-box").forEach(function (el) { ro.observe(el); });
+  }
+  window.addEventListener("resize", function () {
+    Object.keys(charts).forEach(function (k) { charts[k].resize(); });
+  });
+  window.addEventListener("orientationchange", function () {
+    setTimeout(function () {
+      Object.keys(charts).forEach(function (k) { charts[k].resize(); });
+    }, 260);
+  });
+
+  /* ---------------- 三栏拖拽 ---------------- */
+  (function splitters() {
+    var layout = document.getElementById("layout");
+    if (!layout) return;
+
+    function startDrag(mode, startX, startLeft, startRight) {
+      layout.style.transition = "none";
+
+      function onMove(clientX) {
+        var dx = clientX - startX;
+        var total = layout.clientWidth;
+        if (mode === "left") {
+          var w = Math.min(Math.max(startLeft + dx, 180), total * 0.42);
+          layout.style.setProperty("--left", w + "px");
+        } else {
+          var wr = Math.min(Math.max(startRight - dx, 240), total * 0.46);
+          layout.style.setProperty("--right", wr + "px");
+        }
+      }
+
+      function onPointerMove(e) {
+        e.preventDefault();
+        onMove(e.clientX);
+      }
+      function onTouchMove(e) {
+        if (e.touches && e.touches[0]) onMove(e.touches[0].clientX);
+      }
+      function stop() {
+        window.removeEventListener("pointermove", onPointerMove);
+        window.removeEventListener("pointerup", stop);
+        window.removeEventListener("pointercancel", stop);
+        window.removeEventListener("touchmove", onTouchMove);
+        window.removeEventListener("touchend", stop);
+        document.body.style.userSelect = "";
+        document.querySelectorAll(".splitter").forEach(function (s) { s.classList.remove("active"); });
+        Object.keys(charts).forEach(function (k) { charts[k].resize(); });
+      }
+
+      document.body.style.userSelect = "none";
+      window.addEventListener("pointermove", onPointerMove, { passive: false });
+      window.addEventListener("pointerup", stop);
+      window.addEventListener("pointercancel", stop);
+      window.addEventListener("touchmove", onTouchMove, { passive: false });
+      window.addEventListener("touchend", stop);
+    }
+
+    document.querySelectorAll(".splitter").forEach(function (sp) {
+      sp.addEventListener("pointerdown", function (e) {
+        e.preventDefault();
+        sp.classList.add("active");
+        var cs = getComputedStyle(layout);
+        var leftPx = parseFloat(cs.getPropertyValue("--left")) || 264;
+        var rightPx = parseFloat(cs.getPropertyValue("--right")) || 372;
+        startDrag(sp.getAttribute("data-side"), e.clientX, leftPx, rightPx);
+      });
+    });
+  })();
+
+  /* ---------------- 目录平滑滚动 ---------------- */
+  document.querySelectorAll('nav.toc a').forEach(function (a) {
+    a.addEventListener("click", function (e) {
+      var target = document.querySelector(a.getAttribute("href"));
+      if (!target) return;
+      e.preventDefault();
+      var y = target.getBoundingClientRect().top + window.pageYOffset - 12;
+      window.scrollTo({ top: y, behavior: "smooth" });
+    });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作业九 · 偏差体检报告 · 三处受检对象复查</title>
+<style>
+  :root{
+    --bg1:#c9c6c3;--bg2:#b8b5b2;
+    --ink:#3a3735;--ink-soft:#7d7875;
+    --glass:linear-gradient(155deg,rgba(255,255,255,.66),rgba(255,255,255,.36));
+    --brd:rgba(255,255,255,.72);
+    --shadow:0 20px 46px -26px rgba(70,64,60,.6);
+    --radius:26px;
+    --navy:#101d32;
+    --line:#e5e1dd;
+    --lv1:#4b7a5f;--lv1-bg:#eef5f0;
+    --lv2:#a97c2f;--lv2-bg:#fbf4e6;
+    --lv3:#a8596a;--lv3-bg:#fbeef0;
+    --ok:#4b7a5f;--warn:#a97c2f;--bad:#a8596a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+    color:var(--ink);min-height:100vh;padding:56px 20px 64px;-webkit-font-smoothing:antialiased;
+    background:
+      radial-gradient(900px 520px at 8% -6%, rgba(255,255,255,.8), transparent 62%),
+      radial-gradient(760px 480px at 96% 108%, rgba(255,255,255,.62), transparent 58%),
+      linear-gradient(160deg,var(--bg1),var(--bg2));
+    background-attachment:fixed;line-height:1.7;
+  }
+  .page{width:min(1120px,100%);margin:0 auto}
+  .back{display:inline-flex;align-items:center;gap:6px;margin-bottom:26px;font-size:12px;font-weight:600;
+    color:#6b6460;text-decoration:none;padding:8px 16px;border-radius:99px;background:rgba(255,255,255,.5);
+    border:1px solid var(--brd)}
+  .back:hover{color:#3a3735}
+
+  /* ===== Hero ===== */
+  .hero{text-align:center;padding:10px 0 38px}
+  .eyebrow{font-size:12px;letter-spacing:.28em;color:var(--ink-soft);text-transform:uppercase}
+  .hero h1{font-size:clamp(26px,4.5vw,42px);font-weight:800;margin:12px 0 14px;letter-spacing:.02em;
+    background:linear-gradient(180deg,#4b4643,#8b847f);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero .lead{font-size:14px;line-height:2;color:var(--ink-soft);max-width:700px;margin:0 auto}
+  .chips{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:20px}
+  .chips span{font-size:11.5px;padding:7px 15px;border-radius:99px;color:#6b6460;background:rgba(255,255,255,.5);
+    border:1px solid var(--brd);backdrop-filter:blur(8px)}
+
+  /* ===== 体检单抬头 ===== */
+  .slip{margin-top:22px;border-radius:20px;overflow:hidden;border:1px solid var(--brd);
+    background:var(--glass);box-shadow:var(--shadow);backdrop-filter:blur(20px) saturate(150%)}
+  .slip .bar{padding:13px 22px;background:var(--navy);color:#dce6f4;display:flex;flex-wrap:wrap;
+    gap:10px 26px;font-size:11.5px;letter-spacing:.08em}
+  .slip .bar b{color:#fff;font-weight:700}
+  .slip .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line)}
+  .slip .cell{padding:16px 20px;background:rgba(255,255,255,.55)}
+  .slip .cell .k{font-size:10.5px;letter-spacing:.14em;color:var(--ink-soft)}
+  .slip .cell .v{font-size:19px;font-weight:800;margin-top:5px;letter-spacing:-.01em}
+  .slip .cell .v small{font-size:11px;font-weight:600;color:var(--ink-soft);letter-spacing:0}
+
+  /* ===== Section ===== */
+  .section{margin-top:22px;padding:28px;border-radius:var(--radius);background:var(--glass);
+    border:1px solid var(--brd);box-shadow:var(--shadow);
+    backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%)}
+  .shead{display:flex;gap:14px;align-items:flex-start;margin-bottom:18px}
+  .snum{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;flex:0 0 38px;
+    border-radius:12px;background:var(--navy);color:#fff;font-size:12px;font-weight:800;letter-spacing:.08em}
+  .section h2{font-size:20px;font-weight:800;letter-spacing:-.01em}
+  .ssub{margin-top:4px;color:var(--ink-soft);font-size:12.5px}
+
+  /* ===== 五步法 ===== */
+  .steps5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+  .step{border:1px solid var(--line);border-radius:16px;background:#fff;padding:16px 16px 18px;position:relative}
+  .step .n{position:absolute;top:12px;right:14px;font-size:11px;font-weight:800;color:rgba(120,113,108,.35);
+    font-variant-numeric:tabular-nums}
+  .step h3{font-size:13px;font-weight:800;margin-bottom:8px;letter-spacing:.04em}
+  .step p{font-size:11.5px;line-height:1.85;color:#5d5854}
+
+  /* ===== 判级标尺 ===== */
+  .scale{margin-top:16px;border:1px solid var(--line);border-radius:16px;background:#fff;padding:18px 20px}
+  .scale .track{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
+  .scale .seg{border-radius:12px;padding:12px 14px;font-size:11.5px;line-height:1.8}
+  .scale .seg b{display:block;font-size:12.5px;margin-bottom:3px}
+  .seg.l1{background:var(--lv1-bg);color:var(--lv1);border:1px solid rgba(75,122,95,.25)}
+  .seg.l2{background:var(--lv2-bg);color:var(--lv2);border:1px solid rgba(169,124,47,.25)}
+  .seg.l3{background:var(--lv3-bg);color:var(--lv3);border:1px solid rgba(168,89,106,.25)}
+  .scale .formula{font-size:12px;color:#5d5854;margin-top:8px}
+  .scale .formula code{font-family:ui-monospace,Consolas,monospace;font-size:11.5px;
+    background:rgba(120,110,120,.1);padding:2px 7px;border-radius:6px;color:#5a5560}
+
+  /* ===== 受检者卡 ===== */
+  .subject{margin-top:18px;border:1px solid var(--line);border-radius:20px;background:#fff;overflow:hidden}
+  .subj-head{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between;
+    padding:15px 20px;background:linear-gradient(155deg,#f7f6f5,#f0eeec);border-bottom:1px solid var(--line)}
+  .subj-head .l{display:flex;align-items:center;gap:12px}
+  .subj-head .no{width:30px;height:30px;flex:0 0 30px;border-radius:9px;background:var(--navy);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+  .subj-head h3{font-size:14.5px;font-weight:800;letter-spacing:.02em}
+  .subj-head .src{font-size:11px;color:var(--ink-soft);margin-top:2px}
+  .subj-head .verdict{font-size:11.5px;font-weight:800;padding:6px 14px;border-radius:99px;white-space:nowrap}
+  .verdict.v3{background:var(--lv3-bg);color:var(--lv3);border:1px solid rgba(168,89,106,.3)}
+  .verdict.v2{background:var(--lv2-bg);color:var(--lv2);border:1px solid rgba(169,124,47,.3)}
+
+  /* ===== 表格 ===== */
+  .twrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:12.6px;min-width:720px}
+  thead th{padding:11px 14px;background:#faf9f8;color:#57524e;font-size:11px;letter-spacing:.08em;
+    text-align:left;font-weight:800;white-space:nowrap;border-bottom:1px solid var(--line)}
+  tbody td{padding:13px 14px;border-bottom:1px solid var(--line);color:#4a4642;vertical-align:top;line-height:1.75}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:nth-child(even){background:#fcfbfa}
+  td.k{font-weight:700;color:#4a4642;white-space:nowrap}
+  td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .lv{display:inline-block;font-size:11px;font-weight:800;padding:2px 9px;border-radius:99px;white-space:nowrap}
+  .lv.p1{background:var(--lv1-bg);color:var(--lv1)}
+  .lv.p2{background:var(--lv2-bg);color:var(--lv2)}
+  .lv.p3{background:var(--lv3-bg);color:var(--lv3)}
+  .dim{color:var(--ink-soft)}
+  .good{color:var(--ok);font-weight:700}
+  .warn{color:var(--warn);font-weight:700}
+  .bad{color:var(--bad);font-weight:700}
+
+  /* ===== 小结 / 处方 ===== */
+  .takeaway{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:18px 20px;background:#fcfbfa;
+    border-top:1px solid var(--line)}
+  .tk{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:#fff}
+  .tk h4{font-size:11.5px;letter-spacing:.12em;margin-bottom:8px}
+  .tk.find h4{color:var(--bad)}
+  .tk.rx h4{color:var(--ok)}
+  .tk p{font-size:12.2px;line-height:1.9;color:#5d5854}
+  .tk p+p{margin-top:7px}
+
+  /* ===== 汇总条 ===== */
+  .bars{display:grid;gap:11px;margin-top:6px}
+  .bar-row{display:flex;align-items:center;gap:12px;font-size:12px}
+  .bar-row .lb{width:104px;flex:0 0 104px;color:#5d5854}
+  .bar-row .bar{flex:1;height:11px;background:#f0edea;border-radius:99px;overflow:hidden}
+  .bar-row .fill{height:100%;border-radius:99px}
+  .bar-row .fill.f1{background:linear-gradient(90deg,#4b7a5f,#7aa78c)}
+  .bar-row .fill.f2{background:linear-gradient(90deg,#a97c2f,#d3ab63)}
+  .bar-row .fill.f3{background:linear-gradient(90deg,#a8596a,#c98a98)}
+  .bar-row .vv{width:44px;flex:0 0 44px;text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
+
+  /* ===== 归因三格 ===== */
+  .causes{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:4px}
+  .cause{border:1px solid var(--line);border-radius:16px;background:#fff;padding:18px;border-top:4px solid var(--line)}
+  .cause.c1{border-top-color:#a8596a}
+  .cause.c2{border-top-color:#a97c2f}
+  .cause.c3{border-top-color:#4b7a5f}
+  .cause h3{font-size:13.5px;font-weight:800;margin-bottom:6px}
+  .cause .tagline{font-size:11px;letter-spacing:.1em;color:var(--ink-soft);margin-bottom:12px}
+  .cause ul{list-style:none;display:grid;gap:8px}
+  .cause li{font-size:12px;line-height:1.8;color:#5d5854;padding-left:14px;position:relative}
+  .cause li::before{content:"";position:absolute;left:0;top:8px;width:5px;height:5px;border-radius:50%;background:#c9c6c3}
+
+  /* ===== 复查 ===== */
+  .plan{display:grid;gap:10px;margin-top:4px}
+  .plan-row{display:grid;grid-template-columns:52px 1fr 130px 96px;gap:14px;align-items:center;
+    border:1px solid var(--line);border-radius:14px;background:#fff;padding:14px 16px;font-size:12.3px}
+  .plan-row .pno{font-size:11px;font-weight:800;color:#fff;background:#8d8783;border-radius:8px;
+    text-align:center;padding:4px 0;letter-spacing:.06em}
+  .plan-row .ptask{color:#4a4642;line-height:1.7}
+  .plan-row .pwhen{font-size:11.5px;color:var(--ink-soft);text-align:right}
+  .plan-row .pstate{font-size:11px;font-weight:800;text-align:center;padding:5px 0;border-radius:99px;
+    background:var(--lv2-bg);color:var(--lv2)}
+
+  .close{margin-top:22px;padding:24px 26px;border-radius:20px;color:#eaf2fb;
+    background:radial-gradient(circle at 90% 20%,rgba(255,140,42,.13),transparent 30%),
+               radial-gradient(circle at 10% 80%,rgba(59,130,246,.13),transparent 30%),
+               linear-gradient(120deg,#101d32,#0d2930)}
+  .close p{font-size:15px;font-weight:600;line-height:2}
+  .close .c1{color:#ffb066;font-weight:800}
+  .close .c2{color:#93c5fd;font-weight:800}
+  .close .c3{color:#86e0b4;font-weight:800}
+
+  .foot{text-align:center;margin-top:26px;font-size:11.5px;color:var(--ink-soft);letter-spacing:.08em;line-height:2}
+
+  @media(max-width:900px){
+    .slip .grid{grid-template-columns:1fr 1fr}
+    .steps5{grid-template-columns:1fr 1fr}
+    .causes{grid-template-columns:1fr}
+    .takeaway{grid-template-columns:1fr}
+    .plan-row{grid-template-columns:44px 1fr;gap:10px}
+    .plan-row .pwhen,.plan-row .pstate{text-align:left}
+  }
+  @media(max-width:820px){
+    body{padding:36px 14px 52px}
+    .section{padding:20px 16px}
+  }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <a class="back" href="index.html">← 返回我的学习成果</a>
+
+  <header class="hero">
+    <p class="eyebrow">2026 · AI 课程作品集 · 作业九</p>
+    <h1>偏差体检报告</h1>
+    <p class="lead">把三件已交付的作品当作三位「受检者」，用同一套量表逐项比对<br>
+      「我要求 AI 做的」与「AI 实际交付的」，把差异从「感觉不太对」变成可定位、可判级、可开方的指标。</p>
+    <div class="chips">
+      <span>🩺 三处受检对象</span>
+      <span>📋 15 项检查</span>
+      <span>📐 三级判级</span>
+      <span>🧾 归因与处方</span>
+      <span>🔁 复查计划</span>
+    </div>
+  </header>
+
+  <div class="slip">
+    <div class="bar">
+      <span>报告编号 <b>BC-2026-09</b></span>
+      <span>受检对象 <b>3 件</b></span>
+      <span>检查项 <b>15 项</b></span>
+      <span>体检日期 <b>2026-11-16</b></span>
+      <span>体检人 <b>本课程学员</b></span>
+    </div>
+    <div class="grid">
+      <div class="cell"><div class="k">正常 · Ⅰ 级</div><div class="v" style="color:var(--lv1)">2 <small>项</small></div></div>
+      <div class="cell"><div class="k">轻度偏差 · Ⅱ 级</div><div class="v" style="color:var(--lv2)">7 <small>项</small></div></div>
+      <div class="cell"><div class="k">异常 · Ⅲ 级</div><div class="v" style="color:var(--lv3)">6 <small>项</small></div></div>
+      <div class="cell"><div class="k">体检结论</div><div class="v" style="color:var(--lv3);font-size:16px">亚健康 · 需干预</div></div>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="shead">
+      <span class="snum">01</span>
+      <div>
+        <h2>体检方法 · 五步法与判级标尺</h2>
+        <p class="ssub">不做笼统评价，只做可复现的比对。每一项检查都必须写清「要求值」和「实测值」。</p>
+      </div>
+    </div>
+
+    <div class="steps5">
+      <div class="step"><span class="n">01</span><h3>建档</h3>
+        <p>锁定受检对象：同一份提示词、同一份输入、同一个交付格式，避免换变量导致结果无法归因。</p></div>
+      <div class="step"><span class="n">02</span><h3>定标</h3>
+        <p>把模糊要求翻译成可测指标：版式比例、面板数量、秒数、码率、标注条数、评分维度。</p></div>
+      <div class="step"><span class="n">03</span><h3>实测</h3>
+        <p>逐项取值。能从文件读的读文件，只能看的写「目视判读」，不把推断写成数据。</p></div>
+      <div class="step"><span class="n">04</span><h3>判级</h3>
+        <p>用统一标尺打级：偏差越大级越高，避免「这个严重那个还好」的随意性。</p></div>
+      <div class="step"><span class="n">05</span><h3>归因与开方</h3>
+        <p>把偏差分成模型能力、产品取舍、提示词漏洞三类，只在能改的地方开处方。</p></div>
+    </div>
+
+    <div class="scale">
+      <div class="formula">偏差率 <code>d = |实测值 − 要求值| ÷ 容差</code>，容差由该项的可接受浮动决定。</div>
+      <div class="track">
+        <div class="seg l1"><b>Ⅰ 级 · 正常 · d ≤ 1</b>落在容差内，无需处理。</div>
+        <div class="seg l2"><b>Ⅱ 级 · 轻度偏差 · 1 &lt; d ≤ 2</b>可用但需修补，记录进复查清单。</div>
+        <div class="seg l3"><b>Ⅲ 级 · 异常 · d &gt; 2</b>破坏原始需求，必须重做或改方案。</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shead">
+      <span class="snum">02</span>
+      <div>
+        <h2>第一处偏差 · 医学示意图的版式与叙事坍塌</h2>
+        <p class="ssub">受检对象：作品 06「医学示意图提示词工程 × 四代生成模型对比」中的 AI 生成稿。</p>
+      </div>
+    </div>
+
+    <div class="subject">
+      <div class="subj-head">
+        <div class="l">
+          <span class="no">A</span>
+          <div>
+            <h3>膝关节骨质增生病理图 · 生成稿</h3>
+            <div class="src">参考来源：原稿 knee-osteophyte-mechanism-fig1.png ／ 生成稿 运动康复骨质增生_论文配图.png</div>
+          </div>
+        </div>
+        <span class="verdict v3">体检结论：Ⅲ 级 · 异常</span>
+      </div>
+      <div class="twrap">
+        <table>
+          <thead><tr><th style="width:88px">编号</th><th>检查项目</th><th>要求值（参考范围）</th><th>实测值</th><th style="width:74px">判级</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="k">A-1</td><td>版式构图</td>
+              <td>横版 4:3 · 四个等宽面板从左到右排列 · 面板间灰色粗箭头串联</td>
+              <td class="bad">竖版 3:4 · 单幅特写，面板与箭头全部消失</td>
+              <td><span class="lv p3">Ⅲ 级</span></td>
+            </tr>
+            <tr>
+              <td class="k">A-2</td><td>叙事完整性</td>
+              <td>四阶段因果链：正常关节 → 疲劳负荷 → 微损伤修复 → 骨赘形成</td>
+              <td class="bad">仅保留「骨赘形成」一个瞬间，<b>3 / 4 阶段信息缺失</b></td>
+              <td><span class="lv p3">Ⅲ 级</span></td>
+            </tr>
+            <tr>
+              <td class="k">A-3</td><td>标注密度</td>
+              <td>约 14 条文字：大标题 + 4 个面板标题 + 各面板 3–4 条解剖标注 + 底部流程条</td>
+              <td class="bad">4 条：1 个大标题 + 3 条短标注（关节软骨／骨赘／关节间隙），长句标注全部丢失</td>
+              <td><span class="lv p3">Ⅲ 级</span></td>
+            </tr>
+            <tr>
+              <td class="k">A-4</td><td>风格还原</td>
+              <td>手绘水彩 · 奶油色系 · 纸面肌理 · 医学图谱质感</td>
+              <td class="good">高度一致，另加方格纸底纹与橙青对比</td>
+              <td><span class="lv p1">Ⅰ 级</span></td>
+            </tr>
+            <tr>
+              <td class="k">A-5</td><td>元素克制</td>
+              <td>负面提示已排除「多余肢体／乱码文字／面板数量错误」，画面只保留被要求的主体</td>
+              <td class="warn">模型自行脑补 2 处装饰：左侧四层病程椭圆盘、右下跑步人物剪影</td>
+              <td><span class="lv p2">Ⅱ 级</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="takeaway">
+        <div class="tk find">
+          <h4>体检小结</h4>
+          <p>这一处的偏差<b>不在画得好不好，而在画成了另一件事</b>。提示词写的是「过程」，模型交的是「瞬间」。风格词（手绘水彩、奶油色系）几乎满分，说明<b>形容词类指令最容易被遵守</b>；而版式、数量、因果顺序这类<b>结构性指令最先崩塌</b>。</p>
+          <p>这条规律与作品 06 里 GMM / GAN / VAE / DDPM 的对比结论一致：逐像素去噪擅长局部质感，不擅长全局版式约束。</p>
+        </div>
+        <div class="tk rx">
+          <h4>处方</h4>
+          <p>① <b>拆版生成</b>：四个面板分四次单独出图，每次只描述一个阶段，再在排版工具里拼版加箭头。</p>
+          <p>② <b>文字后置</b>：所有长句标注不交给模型，统一在后期加字，避免变形。</p>
+          <p>③ <b>负面提示补一条</b>：明确写「no extra decorative elements, no circular progress rings, no human figures」，压掉脑补装饰。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shead">
+      <span class="snum">03</span>
+      <div>
+        <h2>第二处偏差 · 双版本音频的时长漂移与情绪错位</h2>
+        <p class="ssub">受检对象：作品 05「《李欣彤》双版本音频对比 &amp; 提示词改造」的 A / B 两版。</p>
+      </div>
+    </div>
+
+    <div class="subject">
+      <div class="subj-head">
+        <div class="l">
+          <span class="no">B</span>
+          <div>
+            <h3>同一首歌的原版 vs 女声版</h3>
+            <div class="src">参考来源：xintong-original.mp3（7,095,359 B）／ xintong-female.mp3（6,518,576 B），均为 256 kbps</div>
+          </div>
+        </div>
+        <span class="verdict v3">体检结论：Ⅲ 级 · 异常</span>
+      </div>
+      <div class="twrap">
+        <table>
+          <thead><tr><th style="width:88px">编号</th><th>检查项目</th><th>要求值（参考范围）</th><th>实测值</th><th style="width:74px">判级</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="k">B-1</td><td>总时长</td>
+              <td>同一首歌、同一曲式，两版时长一致（容差 ±3%）</td>
+              <td class="bad num">3:42 → 3:24，缩短 18 秒，<b>偏差 −8.1%</b></td>
+              <td><span class="lv p3">Ⅲ 级</span></td>
+            </tr>
+            <tr>
+              <td class="k">B-2</td><td>导出规格</td>
+              <td>码率与采样规格保持一致，排除「换导出参数」干扰</td>
+              <td class="good">两版均为 256 kbps，同一导出规格</td>
+              <td><span class="lv p1">Ⅰ 级</span></td>
+            </tr>
+            <tr>
+              <td class="k">B-3</td><td>文件体积</td>
+              <td>与时长同比例变化（体积差 ≈ 时长差）</td>
+              <td class="warn num">7,095,359 B → 6,518,576 B，差 576,783 B（−8.1%）</td>
+              <td><span class="lv p2">Ⅱ 级</span></td>
+            </tr>
+            <tr>
+              <td class="k">B-4</td><td>人声音色</td>
+              <td>沙哑女声：husky / raspy / breathy / vocal fry，至少锁定音色而非只锁性别</td>
+              <td class="warn">提示词只有「女声」一个限定，未描述音色；性别锁住了，音色没锁</td>
+              <td><span class="lv p2">Ⅱ 级</span></td>
+            </tr>
+            <tr>
+              <td class="k">B-5</td><td>情绪基调</td>
+              <td>emo 悲情、心碎、深夜孤独，与歌词情绪统一</td>
+              <td class="bad">署名「活力可爱」与 emo 悲情歌词正面冲突，模型优先走甜系</td>
+              <td><span class="lv p3">Ⅲ 级</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="takeaway">
+        <div class="tk find">
+          <h4>体检小结</h4>
+          <p>码率完全一致（Ⅰ 级），说明<b>差异不是导出造成的，而是生成造成的</b>。两版体积与时长同比例缩水 8.1%，指向同一个病因：<b>曲式结构没被锁定</b>，段落被压缩、尾奏被砍。</p>
+          <p>更隐蔽的一处是 B-5：一个与主题矛盾的风格词「活力可爱」，其破坏力比缺参数更大——<b>错误的正向指令比空白更危险</b>。</p>
+        </div>
+        <div class="tk rx">
+          <h4>处方</h4>
+          <p>① <b>锁结构</b>：把曲式写成清单（intro → V1 → 副歌 → V2 → 副歌 → 桥段 → 说唱 → 终副歌 → 尾奏），并给每段标秒数。</p>
+          <p>② <b>锁音色</b>：用 husky female vocal / breathy / raspy alto / slight vocal fry 替代「女声」。</p>
+          <p>③ <b>清掉矛盾词</b>：把「活力可爱」从风格位移除，写入负面提示 no upbeat / no cheerful。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shead">
+      <span class="snum">04</span>
+      <div>
+        <h2>第三处偏差 · 双平台视频的规格错位与文字失守</h2>
+        <p class="ssub">受检对象：作品 07「Hugging Face vs 豆包 · 身体结构动态视频生成对比」的两段成片。</p>
+      </div>
+    </div>
+
+    <div class="subject">
+      <div class="subj-head">
+        <div class="l">
+          <span class="no">C</span>
+          <div>
+            <h3>半透明人体膝关节屈曲 · 双平台同题生成</h3>
+            <div class="src">参考来源：生成身体结构照片动态提示词.mp4（约 6.6 MB）／ tmptqtjbijn.mp4（约 857 KB）</div>
+          </div>
+        </div>
+        <span class="verdict v2">体检结论：Ⅱ 级 · 轻度偏差</span>
+      </div>
+      <div class="twrap">
+        <table>
+          <thead><tr><th style="width:88px">编号</th><th>检查项目</th><th>要求值（参考范围）</th><th>实测值</th><th style="width:74px">判级</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="k">C-1</td><td>片段时长</td>
+              <td>Hugging Face 提示词 6 秒 / 豆包提示词 8 秒</td>
+              <td class="warn">HF 侧为长片段多步工作流（6.6 MB），豆包为短片段成片（857 KB），两者时长口径不同</td>
+              <td><span class="lv p2">Ⅱ 级</span></td>
+            </tr>
+            <tr>
+              <td class="k">C-2</td><td>分辨率帧率</td>
+              <td>720p · 24 fps</td>
+              <td class="warn">HF 侧依所选模型在 480p–720p 间浮动；豆包侧稳定 720p · 24 fps</td>
+              <td><span class="lv p2">Ⅱ 级</span></td>
+            </tr>
+            <tr>
+              <td class="k">C-3</td><td>画面文字</td>
+              <td>提示词明确要求「标签清晰可读」</td>
+              <td class="bad">实测评分：HF 4.5 ／ 豆包 5.5（10 分制），两边均无法原生叠字，必须后期合成</td>
+              <td><span class="lv p3">Ⅲ 级</span></td>
+            </tr>
+            <tr>
+              <td class="k">C-4</td><td>解剖结构</td>
+              <td>无穿模、无多余肢体、半透明层随关节运动自然拉伸压缩</td>
+              <td class="warn">HF 侧软组织拉伸／压缩偶发穿模，长片段有累积漂移；豆包侧关节运动更自然</td>
+              <td><span class="lv p2">Ⅱ 级</span></td>
+            </tr>
+            <tr>
+              <td class="k">C-5</td><td>综合观感</td>
+              <td>达到医学教育可用水平（≥ 7.5 分）</td>
+              <td class="warn num">HF 综合 6.42 ／ 豆包综合 7.50</td>
+              <td><span class="lv p2">Ⅱ 级</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="takeaway">
+        <div class="tk find">
+          <h4>体检小结</h4>
+          <p>这处偏差最值得记录的是 C-3：<b>文字是整份体检里唯一被判「Ⅲ 级」的项目，却是两个平台共同的失守项</b>。要求写得很明确，两家都做不到——这不是提示词写坏了，而是<b>当代视频模型的能力边界</b>。</p>
+          <p>其余四项都是 Ⅱ 级：能用，但规格不齐。HF 的偏差来源于「模型可选、规格不统一」，豆包的偏差来源于「参数封闭、用户调不了」。</p>
+        </div>
+        <div class="tk rx">
+          <h4>处方</h4>
+          <p>① <b>文字全部后置</b>：承认视频模型不负责叠字，把标注当作剪辑环节的工作，别再写进提示词浪费 token。</p>
+          <p>② <b>统一口径</b>：对比实验里强制两边同为 720p · 24 fps · 8 秒，否则评分不可比。</p>
+          <p>③ <b>控制漂移</b>：HF 侧用首尾帧锁定 + 6 秒内短片段分段生成，避免长片段累积漂移。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shead">
+      <span class="snum">05</span>
+      <div>
+        <h2>体检结论汇总单</h2>
+        <p class="ssub">15 项检查合并统计，并计算加权偏差指数（Ⅰ = 1 分、Ⅱ = 2 分、Ⅲ = 3 分）。</p>
+      </div>
+    </div>
+
+    <div class="bars">
+      <div class="bar-row"><span class="lb">Ⅰ 级 · 正常</span>
+        <div class="bar"><div class="fill f1" style="width:13.3%"></div></div><span class="vv">2</span></div>
+      <div class="bar-row"><span class="lb">Ⅱ 级 · 轻度</span>
+        <div class="bar"><div class="fill f2" style="width:46.7%"></div></div><span class="vv">7</span></div>
+      <div class="bar-row"><span class="lb">Ⅲ 级 · 异常</span>
+        <div class="bar"><div class="fill f3" style="width:40%"></div></div><span class="vv">6</span></div>
+    </div>
+
+    <div class="twrap" style="margin-top:18px">
+      <table>
+        <thead><tr><th style="width:74px">受检者</th><th>作品</th><th>主要偏差部位</th><th style="width:88px">Ⅰ / Ⅱ / Ⅲ</th><th style="width:96px">单项指数</th><th style="width:88px">结论</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="k">A</td><td>作品 06 · 医学示意图</td>
+            <td class="bad">版式、叙事阶段、标注密度</td>
+            <td class="num">1 / 1 / 3</td><td class="num bad">2.40</td>
+            <td><span class="lv p3">Ⅲ 级</span></td>
+          </tr>
+          <tr>
+            <td class="k">B</td><td>作品 05 · 双版本音频</td>
+            <td class="bad">时长漂移、情绪基调矛盾</td>
+            <td class="num">1 / 2 / 2</td><td class="num bad">2.20</td>
+            <td><span class="lv p3">Ⅲ 级</span></td>
+          </tr>
+          <tr>
+            <td class="k">C</td><td>作品 07 · 双平台视频</td>
+            <td class="warn">规格不齐、画面文字失守</td>
+            <td class="num">0 / 4 / 1</td><td class="num warn">2.20</td>
+            <td><span class="lv p2">Ⅱ 级</span></td>
+          </tr>
+          <tr style="background:#f7f6f5">
+            <td class="k">合计</td><td><b>3 件作品 · 15 项检查</b></td>
+            <td class="dim">结构性指令 &gt; 参数指令 &gt; 风格指令（按失守率排序）</td>
+            <td class="num"><b>2 / 7 / 6</b></td><td class="num"><b>2.27</b></td>
+            <td><span class="lv p3">亚健康</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="takeaway" style="border-top:0;background:transparent;padding:18px 0 0">
+      <div class="tk find" style="grid-column:1 / -1">
+        <h4>一句话结论</h4>
+        <p>三处偏差按失守率从高到低排序是：<b>结构性指令（版式 / 阶段 / 结构 / 时长）&gt; 参数指令（音色 / 分辨率 / 叠字）&gt; 风格指令（水彩、奶油色系、扁平 2D）</b>。也就是说，<b>AI 最能听懂「像什么」，最听不懂「怎么组织」</b>——而这恰好是提示词工程最该补的地方。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shead">
+      <span class="snum">06</span>
+      <div>
+        <h2>偏差归因 · 三类病因</h2>
+        <p class="ssub">判级之后必须归因，否则体检没有意义。同样 Ⅲ 级，能改的和改不了的处置方式完全不同。</p>
+      </div>
+    </div>
+
+    <div class="causes">
+      <div class="cause c1">
+        <h3>能力问题</h3>
+        <div class="tagline">模型今天就做不到 · 只能改方案</div>
+        <ul>
+          <li>A-1 / A-2：多面板长指令被简化为单主体构图</li>
+          <li>A-3：长句中文标注变形，短词才稳定</li>
+          <li>C-3：视频模型原生不承担叠字渲染</li>
+        </ul>
+      </div>
+      <div class="cause c2">
+        <h3>产品取舍</h3>
+        <div class="tagline">厂商有意为之 · 换平台才能解</div>
+        <ul>
+          <li>C-2：开源侧模型可选但规格不统一</li>
+          <li>C-5：闭源侧 CFG / 步数被蒸馏固定，用户无权调</li>
+          <li>B-2：两边码率一致，反而是唯一被锁住的好项</li>
+        </ul>
+      </div>
+      <div class="cause c3">
+        <h3>提示词漏洞</h3>
+        <div class="tagline">我自己写坏的 · 立刻可改</div>
+        <ul>
+          <li>B-1 / B-3：曲式结构与各段秒数没写死</li>
+          <li>B-4：只写「女声」，没写音色</li>
+          <li>B-5：「活力可爱」与 emo 主题正面冲突</li>
+          <li>A-5：负面提示没排除装饰性元素</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shead">
+      <span class="snum">07</span>
+      <div>
+        <h2>复查计划</h2>
+        <p class="ssub">按「改完即可验证」优先排序，先修提示词漏洞，再绕开能力边界。</p>
+      </div>
+    </div>
+
+    <div class="plan">
+      <div class="plan-row">
+        <div class="pno">01</div>
+        <div class="ptask">音频：重写提示词，锁曲式清单 + 各段秒数 + husky 音色，清掉「活力可爱」</div>
+        <div class="pwhen">待生成 1–2 版后测时长</div>
+        <div class="pstate">待复查</div>
+      </div>
+      <div class="plan-row">
+        <div class="pno">02</div>
+        <div class="ptask">医学图：四面板分四次单幅生成，拼版加箭头，长句标注全部后期加字</div>
+        <div class="pwhen">待重排一次</div>
+        <div class="pstate">待复查</div>
+      </div>
+      <div class="plan-row">
+        <div class="pno">03</div>
+        <div class="ptask">视频：固定 720p · 24 fps · 8 秒同口径重测，标注改为剪辑后置</div>
+        <div class="pwhen">待统一参数后重跑</div>
+        <div class="pstate">待复查</div>
+      </div>
+      <div class="plan-row">
+        <div class="pno">04</div>
+        <div class="ptask">复核指标：时长偏差回落至 ±3% 内、标注条数达标、文字渲染改由后期保证</div>
+        <div class="pwhen">复查时逐项打勾</div>
+        <div class="pstate">待复查</div>
+      </div>
+    </div>
+
+    <div class="close">
+      <p>
+        <span class="c1">偏差体检</span>的价值不在打分，而在把「AI 不太听话」翻译成可执行的判断：
+        哪些是<span class="c2">模型的能力边界</span>，哪些是<span class="c2">产品的取舍</span>，哪些只是<span class="c3">我提示词没写清</span>。<br><br>
+        三件作品、15 项检查、6 项异常——每一处 Ⅲ 级偏差背后，都有一条可以立刻改写的指令。
+      </p>
+    </div>
+  </section>
+
+  <div class="foot">
+    作业九 · 偏差体检报告 · 2026 AI 课程作品集<br>
+    实测值来源：各作品页已核实的文件体积、码率、时长与评分；听感与版式为目视判读，已逐项标注
+  </div>
+
+</main>
+</body>
+</html>

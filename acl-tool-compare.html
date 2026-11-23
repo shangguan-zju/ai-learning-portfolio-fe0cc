@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第十次课 · 工具对比 · 同一份 ACL 生物力学任务，TraceCode 与 DeepSeek 各做一遍</title>
+<style>
+  :root{
+    --bg1:#c9c6c3;--bg2:#b8b5b2;
+    --ink:#3a3735;--ink-soft:#7d7875;
+    --glass:linear-gradient(155deg,rgba(255,255,255,.66),rgba(255,255,255,.36));
+    --brd:rgba(255,255,255,.72);
+    --shadow:0 20px 46px -26px rgba(70,64,60,.6);
+    --radius:26px;
+    --navy:#101d32;
+    --line:#e5e1dd;
+    --a:#3a6ea5;--a-bg:#eef3f9;
+    --b:#8a6a3f;--b-bg:#faf4ea;
+    --cap:#a8596a;--cap-bg:#fbeef0;
+    --trade:#a97c2f;--trade-bg:#fbf4e6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+    color:var(--ink);min-height:100vh;padding:56px 20px 64px;-webkit-font-smoothing:antialiased;
+    background:
+      radial-gradient(900px 520px at 8% -6%, rgba(255,255,255,.8), transparent 62%),
+      radial-gradient(760px 480px at 96% 108%, rgba(255,255,255,.62), transparent 58%),
+      linear-gradient(160deg,var(--bg1),var(--bg2));
+    background-attachment:fixed;line-height:1.7;
+  }
+  .page{width:min(1120px,100%);margin:0 auto}
+  .back{display:inline-flex;align-items:center;gap:6px;margin-bottom:26px;font-size:12px;font-weight:600;
+    color:#6b6460;text-decoration:none;padding:8px 16px;border-radius:99px;background:rgba(255,255,255,.5);
+    border:1px solid var(--brd)}
+  .back:hover{color:#3a3735}
+
+  .hero{text-align:center;padding:10px 0 38px}
+  .eyebrow{font-size:12px;letter-spacing:.28em;color:var(--ink-soft)}
+  .hero h1{font-size:clamp(25px,4.4vw,40px);font-weight:800;margin:12px 0 14px;letter-spacing:.01em;
+    background:linear-gradient(180deg,#4b4643,#8b847f);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero .lead{font-size:14px;line-height:2;color:var(--ink-soft);max-width:720px;margin:0 auto}
+  .chips{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:20px}
+  .chips span{font-size:11.5px;padding:7px 15px;border-radius:99px;color:#6b6460;background:rgba(255,255,255,.5);
+    border:1px solid var(--brd);backdrop-filter:blur(8px)}
+
+  .duo{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:26px}
+  .ver{border-radius:20px;padding:22px 24px;background:var(--glass);border:1px solid var(--brd);
+    box-shadow:var(--shadow);backdrop-filter:blur(20px) saturate(150%);position:relative;overflow:hidden}
+  .ver::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px}
+  .ver.a::before{background:linear-gradient(180deg,#3a6ea5,#7ba3c9)}
+  .ver.b::before{background:linear-gradient(180deg,#8a6a3f,#c2a071)}
+  .ver .tag{display:inline-block;font-size:10.5px;letter-spacing:.16em;font-weight:800;
+    padding:4px 11px;border-radius:99px;margin-bottom:10px}
+  .ver.a .tag{background:var(--a-bg);color:var(--a)}
+  .ver.b .tag{background:var(--b-bg);color:var(--b)}
+  .ver h2{font-size:17px;font-weight:800;margin-bottom:6px}
+  .ver .one{font-size:12.5px;color:var(--ink-soft);line-height:1.85;min-height:66px}
+  .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
+    border-radius:12px;overflow:hidden;margin-top:14px}
+  .metrics div{background:rgba(255,255,255,.6);padding:11px 12px}
+  .metrics .k{font-size:10px;letter-spacing:.1em;color:var(--ink-soft)}
+  .metrics .v{font-size:15px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums}
+  .ver .go{display:inline-block;margin-top:14px;font-size:12px;font-weight:700;text-decoration:none;
+    color:var(--ink-soft);border-bottom:1px dashed #c0bbb6;padding-bottom:1px}
+  .ver .go:hover{color:var(--ink)}
+
+  .section{margin-top:22px;padding:28px;border-radius:var(--radius);background:var(--glass);
+    border:1px solid var(--brd);box-shadow:var(--shadow);
+    backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%)}
+  .shead{display:flex;gap:14px;align-items:flex-start;margin-bottom:18px}
+  .snum{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;flex:0 0 38px;
+    border-radius:12px;background:var(--navy);color:#fff;font-size:12px;font-weight:800;letter-spacing:.08em}
+  .section h2{font-size:20px;font-weight:800;letter-spacing:-.01em}
+  .ssub{margin-top:4px;color:var(--ink-soft);font-size:12.5px}
+
+  .brief{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .brief div{border:1px solid var(--line);border-radius:14px;background:#fff;padding:15px 16px}
+  .brief .k{font-size:10.5px;letter-spacing:.12em;color:var(--ink-soft);margin-bottom:5px}
+  .brief .v{font-size:12.6px;line-height:1.8;color:#4a4642}
+  .promptbox{margin-top:14px;border:1px solid var(--line);border-radius:14px;background:#fcfbfa;padding:16px 18px}
+  .promptbox .k{font-size:10.5px;letter-spacing:.12em;color:var(--ink-soft);margin-bottom:8px}
+  .promptbox code{display:block;font-family:ui-monospace,Consolas,monospace;font-size:12px;
+    line-height:1.95;color:#5a5560;white-space:pre-wrap}
+
+  .items{display:grid;gap:12px}
+  .item{border:1px solid var(--line);border-radius:16px;background:#fff;padding:18px 20px;
+    border-left:4px solid var(--line)}
+  .item.cap{border-left-color:var(--cap)}
+  .item.trade{border-left-color:var(--trade)}
+  .item .ih{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:baseline;margin-bottom:8px}
+  .item .idx{font-size:11px;font-weight:800;color:rgba(120,113,108,.45);font-variant-numeric:tabular-nums}
+  .item h3{font-size:14px;font-weight:800;letter-spacing:.01em}
+  .item p{font-size:12.8px;line-height:1.95;color:#4f4a46}
+  .item p+p{margin-top:7px}
+  .item code{font-family:ui-monospace,Consolas,monospace;font-size:11.5px;background:#f4f1ee;
+    padding:1px 6px;border-radius:5px;color:#8a5a63}
+  .side{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  .side span{font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:99px}
+  .side .s-a{background:var(--a-bg);color:var(--a)}
+  .side .s-b{background:var(--b-bg);color:var(--b)}
+  .side .s-both{background:#f1efed;color:#6b6460}
+
+  .twrap{overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:#fff}
+  table{width:100%;border-collapse:collapse;font-size:12.6px;min-width:820px}
+  thead th{padding:12px 14px;background:#faf9f8;color:#57524e;font-size:11px;letter-spacing:.06em;
+    text-align:left;font-weight:800;white-space:nowrap;border-bottom:1px solid var(--line)}
+  tbody td{padding:12px 14px;border-bottom:1px solid var(--line);color:#4a4642;vertical-align:top;line-height:1.75}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:nth-child(even){background:#fcfbfa}
+  td.k{font-weight:700;white-space:nowrap;color:#4a4642}
+  td.ca{color:#34597f}
+  td.cb{color:#75592f}
+  .lab{display:inline-block;font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:99px;white-space:nowrap}
+  .lab.cap{background:var(--cap-bg);color:var(--cap)}
+  .lab.trade{background:var(--trade-bg);color:var(--trade)}
+  .lab.same{background:#f1efed;color:#6b6460}
+
+  .verdict{display:grid;gap:12px}
+  .vd{border:1px solid var(--line);border-radius:16px;background:#fff;padding:18px 20px}
+  .vd h3{font-size:13.5px;font-weight:800;margin-bottom:8px;color:#3a3735}
+  .vd p{font-size:12.8px;line-height:1.95;color:#4f4a46}
+  .vd p+p{margin-top:7px}
+  .vd em{font-style:normal;font-weight:800;color:#8a5a63}
+  .win{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+  .win div{border:1px solid var(--line);border-radius:14px;padding:16px 18px;background:#fff}
+  .win h4{font-size:11.5px;letter-spacing:.1em;margin-bottom:8px}
+  .win .wa h4{color:var(--a)}
+  .win .wb h4{color:var(--b)}
+  .win ul{list-style:none;display:grid;gap:6px}
+  .win li{font-size:12px;color:#5d5854;line-height:1.8;padding-left:14px;position:relative}
+  .win li::before{content:"";position:absolute;left:0;top:8px;width:5px;height:5px;border-radius:50%;background:#c9c6c3}
+
+  .reflect{background:radial-gradient(circle at 90% 15%,rgba(255,140,42,.12),transparent 32%),
+             radial-gradient(circle at 8% 85%,rgba(59,130,246,.12),transparent 32%),
+             linear-gradient(120deg,#101d32,#0d2930);
+    border-radius:20px;padding:26px 28px;color:#eaf2fb}
+  .reflect h2{color:#fff;font-size:19px;margin-bottom:14px}
+  .reflect p{font-size:13.5px;line-height:2.05;color:#cfdcec}
+  .reflect p+p{margin-top:12px}
+  .reflect b{color:#ffb066}
+  .reflect .k2{color:#93c5fd;font-weight:800}
+  .reflect .k3{color:#86e0b4;font-weight:800}
+  .reflect ol{margin:10px 0 0 20px;display:grid;gap:9px}
+  .reflect li{font-size:13px;line-height:1.95;color:#cfdcec}
+
+  .foot{text-align:center;margin-top:26px;font-size:11.5px;color:var(--ink-soft);letter-spacing:.06em;line-height:2}
+  .foot a{color:#6b6460}
+
+  @media(max-width:900px){
+    .duo{grid-template-columns:1fr}
+    .brief{grid-template-columns:1fr 1fr}
+    .win{grid-template-columns:1fr}
+  }
+  @media(max-width:820px){
+    body{padding:36px 14px 52px}
+    .section{padding:20px 16px}
+    .brief{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <a class="back" href="index.html">← 返回我的学习成果</a>
+
+  <header class="hero">
+    <p class="eyebrow">2026 · AI 课程作品集 · 第十次课课堂作业</p>
+    <h1>同一份任务，两个工具各做一遍</h1>
+    <p class="lead">原文、提示词、交付格式全部保持不变，只换生成工具。<br>
+      一版把六个变量全画满，一版只画有两个数字的那个——差别不在"谁做得更全"，在"谁更清楚自己画的是什么"。</p>
+    <div class="chips">
+      <span>🧪 控制变量</span>
+      <span>⚖️ 能力问题 vs 产品取舍</span>
+      <span>📊 16 维对照</span>
+      <span>🔍 代码级证据</span>
+      <span>💭 我的感悟</span>
+    </div>
+  </header>
+
+  <div class="duo">
+    <div class="ver a">
+      <span class="tag">A 版</span>
+      <h2>TraceCode 生成</h2>
+      <p class="one">单文件直出，ECharts 渲染四联散点 + 两张交互折线 + 一张六变量总览，顶栏常驻"一键导出全部"。取向是「把图做齐、能导出、能直接贴进报告」。</p>
+      <div class="metrics">
+        <div><div class="k">体积</div><div class="v">16.3 KB</div></div>
+        <div><div class="k">代码行数</div><div class="v">262</div></div>
+        <div><div class="k">外部依赖</div><div class="v">1 CDN</div></div>
+      </div>
+      <a class="go" href="tracecode-ACL疲劳着陆生物力学可视化.html" target="_blank">打开 A 版 →</a>
+    </div>
+    <div class="ver b">
+      <span class="tag">B 版</span>
+      <h2>DeepSeek 生成</h2>
+      <p class="one">三栏可拖拽布局，左目录 + 中正文 + 右辅助，11 个板块，含"论文未给出的数据"专章。取向是「做成一页经得起追问的论文解读」。</p>
+      <div class="metrics">
+        <div><div class="k">体积</div><div class="v">45.2 KB</div></div>
+        <div><div class="k">代码行数</div><div class="v">973</div></div>
+        <div><div class="k">外部依赖</div><div class="v">1 CDN</div></div>
+      </div>
+      <a class="go" href="deep%20seekharmnessACL_landing_biomech.html" target="_blank">打开 B 版 →</a>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="shead">
+      <span class="snum">01</span>
+      <div>
+        <h2>任务与变量控制</h2>
+        <p class="ssub">对比要成立，只能有「工具」一个变量。以下四项在两次生成中逐字一致。</p>
+      </div>
+    </div>
+
+    <div class="brief">
+      <div><div class="k">原文</div><div class="v">NAJSPT 2009;4:83<br>2（性别）× 2（疲劳）重复测量设计</div></div>
+      <div><div class="k">实验设置</div><div class="v">40 cm 平台双侧落地<br>疲劳前 3 次 / 疲劳后 3 次</div></div>
+      <div><div class="k">交付格式</div><div class="v">单个 HTML 文件<br>双击打开即可查看</div></div>
+      <div><div class="k">验收标准</div><div class="v">四张核心图 + 统计附表<br>数值与正文一致</div></div>
+    </div>
+
+    <div class="promptbox">
+      <div class="k">给两个工具的同一条需求（节选）</div>
+      <code>请把这篇论文的图 2–7 做成可交互的网页可视化：
+1. 复现「各生物力学变量峰值出现时的膝屈角」，标出 40° ACL 风险阈值；
+2. 复现「性别 × 疲劳」的交互效应，带误差棒；
+3. 附 MANOVA 与随访 ANOVA 结果表；
+4. 数值必须与正文一致，读图近似的部分要注明。
+输出为单个 HTML 文件。</code>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shead">
+      <span class="snum">02</span>
+      <div>
+        <h2>能力问题</h2>
+        <p class="ssub">不是工具想不想做，而是它现阶段做不到、或做不到位。这类差异换提示词也难以根除。</p>
+      </div>
+    </div>
+
+    <div class="items">
+      <div class="item cap">
+        <div class="ih"><span class="idx">C-01</span><h3>会做除法，但没算清除数该是几</h3></div>
+        <p>A 版的四联图要把鼠标所在点反推回"它属于哪一组"，写法是
+          <code>groups[Math.floor(p.seriesIndex / (variables.length + 3))]</code>。</p>
+        <p>但每组实际推入的 series 是：1 条背景示意曲线 + 6 个变量散点 + 1 条阈值线占位 + 1 个风险区占位 + 1 个组名标签，共 <b>10 条</b>；而 <code>variables.length + 3 = 9</code>。除数小了 1，第四组「膝外翻」那个散点的 <code>seriesIndex</code> 会被算成不存在的第 5 组，tooltip 直接返回空字符串。</p>
+        <p>这段代码语法正确、页面照常渲染、控制台一声不响——<b>它跑得通，但它在第 4 组最后一个点上是坏的</b>。模型写对了映射的"结构"，却没算对映射的"常量"。</p>
+        <div class="side"><span class="s-a">A 版</span><span class="s-b">B 版每格只放 1 条 series，seriesIndex 天然等于组号，无此问题</span></div>
+      </div>
+
+      <div class="item cap">
+        <div class="ih"><span class="idx">C-02</span><h3>数据缺口：默认动作是"补齐"，不是"留白"</h3></div>
+        <p>正文只给了两个变量的精确值（VGRF 与外侧腘绳肌 NEMG 的峰值出现角 ± SD），其余四个变量论文只说"峰值出现在 &gt;40°"，没给数字。这是整份任务里最关键的一处空白。</p>
+        <p>A 版选择把六个变量全画上：四联图里 6 个散点齐备，图 4 是六条横向条形，"≈49°""≈86°"这类值全部来自读图估算。它在一句脚注里交代了"图 1 / 图 4 为原图近似读数"，但估算值和精确值在视觉上<b>完全同权</b>——同样的圆点、同样的图例、同样的字号。</p>
+        <p>B 版反过来：四联图只画 VGRF 和外侧腘绳肌两列，另外四个变量在附表里直接写 <b>「论文未给出」</b>，并单开一节逐条列了 8 项缺失（含受试者身高体重、四组峰值大小、时间序列波形），还写明"本页没有任何示意值或估算值"。</p>
+        <p>同样是面对数据缺口，一个把它填成看起来完整的图，一个把它标成知识边界。<b>六变量里真正有正文依据的只有 2 个，覆盖率 33%，但 A 版呈现出来的完整度是 100%。</b>这两个数字之间的落差，就是最容易被读者误读的地方。</p>
+        <div class="side"><span class="s-a">A 版填满</span><span class="s-b">B 版留白</span></div>
+      </div>
+
+      <div class="item cap">
+        <div class="ih"><span class="idx">C-03</span><h3>不设想失败态：CDN 挂了会怎样，没人问过</h3></div>
+        <p>两版都用一行 <code>&lt;script src="...echarts..."&gt;</code> 引入图表库。区别在于断网之后：</p>
+        <p>A 版第 160 行直接 <code>echarts.init(...)</code>。CDN 一挂，<code>echarts</code> 是 undefined，这行抛错，后面所有代码（包括图表 2/3/4 和导出绑定）一起中断——页面骨架还在，但四张图全空、导出按钮全死，且不给任何提示。</p>
+        <p>B 版在脚本开头先判 <code>if (!window.echarts)</code>，把每个图表容器替换成一段可操作的提示："请确认设备可联网后刷新；如需完全离线使用，把 echarts.min.js 下载到同一目录并改成 <code>&lt;script src="echarts.min.js"&gt;</code>"。此外每张图都套了 <code>safe()</code> 的 try/catch，单图渲染失败只影响那一张，错误信息回显到自己的容器里。</p>
+        <p>提示词没提"要处理加载失败"。A 版按字面交付，B 版多想了半步。这半步不是玄学，是<b>对"这个页面会在什么环境下被打开"做过假设</b>。</p>
+        <div class="side"><span class="s-a">A 版无兜底</span><span class="s-b">B 版有兜底 + 逐图隔离</span></div>
+      </div>
+
+      <div class="item cap">
+        <div class="ih"><span class="idx">C-04</span><h3>读得出数字，读不出数字之间的矛盾</h3></div>
+        <p>原文 Results 写男性 VGRF 峰值出现角在疲劳后「increased by 1°」，Discussion 写「increased by 0.8°」，而正文给出的均值对是 48.8 → 49.6，实际差 <b>+0.8</b>。同一篇论文里，同一件事出现了两个说法。</p>
+        <p>B 版把这件事单独写进了表注：指出 Results 与 Discussion 不一致、按均值算应为 +0.8、本页按 +0.8 绘制；还顺手指出原文「14 females and 15 females」是笔误，按后文对照应为 15 名男性。</p>
+        <p>A 版全文没有提到这两处，只照抄了 +0.8 这个差额——数值恰好正确，但读者无从知道它"为什么正确"。这不是排版问题，是<b>校勘能力</b>：能不能把两段相隔十几页的文字放在一起比一遍。</p>
+        <div class="side"><span class="s-a">A 版未校勘</span><span class="s-b">B 版指出 2 处</span></div>
+      </div>
+
+      <div class="item cap">
+        <div class="ih"><span class="idx">C-05</span><h3>不会自测渲染结果，「纸面算术」直接交付</h3></div>
+        <p>两版都没有在真实浏览器里跑完一遍再交。ECharts 的 grid 百分比、误差棒的像素高度、字体回退后的实际宽度，全部是生成时算出来的理想值。</p>
+        <p>后果在 A 版身上更明显：全文 <b>0 个 @media</b>，四联图容器写死 <code>height:560px</code>，grid 用 8% / 57% / 14% / 58% 手算定位。窗口一窄到手机宽度，四个子图的坐标轴标签就会互相压住——而这个页面在桌面全屏下看起来毫无问题。</p>
+        <p>B 版有 1100px 和 520px 两个断点，窄屏时收起三栏、图高降到 300 / 280px。但这也是"纸面设计"：<b>它没有验证过 280px 高的四联图在手机上标题会不会盖住坐标轴</b>。</p>
+        <p>这是当前代码生成工具最硬的天花板：<b>它能写出逻辑，但看不见结果</b>。验收只能落回人身上。</p>
+        <div class="side"><span class="s-a">A 版 0 断点</span><span class="s-b">B 版 2 断点，但同样未验证</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shead">
+      <span class="snum">03</span>
+      <div>
+        <h2>产品取舍</h2>
+        <p class="ssub">不是做不到，是在「体积 / 信息密度 / 交付场景」之间选了不同的一边。这类差异可以靠提示词调，也可以靠换工具调。</p>
+      </div>
+    </div>
+
+    <div class="items">
+      <div class="item trade">
+        <div class="ih"><span class="idx">T-01</span><h3>262 行 vs 973 行：一份报告，还是一台阅读器</h3></div>
+        <p>A 版的结构是四个 <code>.card</code> 顺序堆叠：核心结论 → 图 1 → 图 2 → 图 3 → 图 4 → 附表。全部 CSS 不到 40 行，读起来像一份排得干净的实验报告，从上往下滚，五分钟能看完。</p>
+        <p>B 版把同一份内容摊成了 11 个板块，外加可拖拽的三栏骨架：左栏目录常驻、中栏正文、右栏辅助。它的 CSS 里有 <code>--left</code> / <code>--right</code> 两个 CSS 变量，配合 pointer + touch 双套事件实现分隔条拖拽，拖完还调用一次 <code>resize()</code>。</p>
+        <p>多出来的 711 行，几乎全部花在"让它能被人查阅"上——目录锚点、平滑滚动、栏宽记忆、阅读辅助术语表。<b>这是把"看完"升级成"查得到"，代价是自己维护的代码量翻了近四倍。</b></p>
+        <div class="side"><span class="s-a">A 版轻量</span><span class="s-b">B 版可查阅</span></div>
+      </div>
+
+      <div class="item trade">
+        <div class="ih"><span class="idx">T-02</span><h3>误差棒：手绘 renderItem，还是借 markLine 画线段</h3></div>
+        <p>A 版用 ECharts 的 <code>custom</code> 类型，在 <code>renderItem</code> 里手动 <code>api.coord()</code> 换算像素、拼三段 line（竖线 + 两根横帽），做成一个可复用的 <code>errorBar()</code> 函数。写法重，但控得住细节，帽宽 9px、线宽 1.4 都能自己定。</p>
+        <p>B 版用 <code>markLine</code> 的"两点连线"画竖线：<code>[{coord:[cat, mean-sd]}, {coord:[cat, mean+sd]}]</code>，一行数据生成一根。写法轻，代价是<b>没有横帽</b>——严格说它画的是一根竖线，不是标准误差棒。</p>
+        <p>两种都对得起"带误差棒"这个要求，但一个是按教科书画，一个是按视觉够用画。这是实现路径的取舍，不是谁不会。</p>
+        <div class="side"><span class="s-a">A 版手绘三段线</span><span class="s-b">B 版 markLine 竖线</span></div>
+      </div>
+
+      <div class="item trade">
+        <div class="ih"><span class="idx">T-03</span><h3>导出：默认动作暴露了各自假设的交付物</h3></div>
+        <p>A 版在页顶用 <code>position:sticky</code> 钉了一条导出栏，<b>「一键导出全部」是主按钮</b>，点下去按 600ms 间隔依次触发 4 张 3 倍像素 PNG 下载。它假设你最终要把图挨个贴进 Word 或 PPT，所以把"批量"放在第一顺位。</p>
+        <p>B 版把导出按钮分别挂在每张图右上角，一次一张，导出后按钮文字变成「✓ 已导出」并在 1.4 秒后复原。它假设你是在<b>读这一页</b>，偶尔摘一张走。</p>
+        <p>细节上两边都想到了白底：A 版 <code>backgroundColor:'#fff'</code>，B 版同样显式传白——都知道透明底贴进文档会变黑块。差别只在"批量优先"还是"单张优先"。</p>
+        <div class="side"><span class="s-a">A 版批量优先</span><span class="s-b">B 版单张优先</span></div>
+      </div>
+
+      <div class="item trade">
+        <div class="ih"><span class="idx">T-04</span><h3>颜色编码哪一维：变量，还是分组</h3></div>
+        <p>A 版四联图给 6 个变量各配一种颜色（深蓝、橙、绿、紫、红、灰），四张子图共用同一套图例——颜色代表"这是哪个变量"，方便跨子图对比同一变量的漂移。</p>
+        <p>B 版四联图每个子图只有两个柱子，颜色代表"这是哪个变量"（VGRF 深蓝 / 腘绳肌暖棕），而<b>分组信息靠子图标题传达</b>（非疲劳·男性、疲劳·男性……），标题颜色还按性别区分。</p>
+        <p>两种都是自洽的编码。A 版因为要在一张图里塞 24 个点，只能靠颜色区分个体；B 版因为每格只有两根柱，把颜色省下来做变量语义、把分组交给位置。<b>编码方式是被数据密度倒逼出来的，不是审美偏好。</b></p>
+        <div class="side"><span class="s-a">A 版颜色=变量</span><span class="s-b">B 版颜色=变量，位置=分组</span></div>
+      </div>
+
+      <div class="item trade">
+        <div class="ih"><span class="idx">T-05</span><h3>标题写成名词，还是写成疑问句</h3></div>
+        <p>A 版的 H1 是「疲劳与性别对双侧着陆峰值生物力学变量出现时膝屈角的影响」——标准的论文标题句式，名词堆叠，审稿人看了不皱眉。</p>
+        <p>B 版的 H1 是「双侧落地时，与 ACL 损伤相关的峰值生物力学变量究竟出现在膝屈曲多少度上？」——一个带问号的句子，读者第一眼就知道这页要回答什么。</p>
+        <p>同一份内容，一个按<b>学术规范</b>起名，一个按<b>读者困惑</b>起名。前者更适合交作业，后者更适合当课件。这属于纯粹的场景取舍。</p>
+        <div class="side"><span class="s-a">A 版名词标题</span><span class="s-b">B 版问句标题</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shead">
+      <span class="snum">04</span>
+      <div>
+        <h2>生成对照表格</h2>
+        <p class="ssub">每行一个维度，最后一列标注这条差异的性质：能力问题、产品取舍，还是根本无差异。</p>
+      </div>
+    </div>
+
+    <div class="twrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:126px">对比维度</th>
+            <th>A 版 · TraceCode</th>
+            <th>B 版 · DeepSeek</th>
+            <th style="width:92px">差异性质</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="k">交付形态</td><td class="ca">单栏 1080px 线性长页</td><td class="cb">三栏可拖拽 + 左目录，11 个板块</td><td><span class="lab trade">产品取舍</span></td></tr>
+          <tr><td class="k">图表引擎</td><td class="ca">ECharts 5.5.0 · canvas</td><td class="cb">ECharts 5.5.1 · canvas</td><td><span class="lab same">无差异</span></td></tr>
+          <tr><td class="k">图表数量</td><td class="ca">4 张（四联 + 2 交互 + 总览）</td><td class="cb">4 张（四联 + 组间 + 交互 + 位置）</td><td><span class="lab same">无差异</span></td></tr>
+          <tr><td class="k">外部依赖</td><td class="ca">1 个 CDN，无失败兜底</td><td class="cb">1 个 CDN，带离线替换指引</td><td><span class="lab cap">能力问题</span></td></tr>
+          <tr><td class="k">体积 / 行数</td><td class="ca">16.3 KB / 262 行</td><td class="cb">45.2 KB / 973 行（3.7 倍）</td><td><span class="lab trade">产品取舍</span></td></tr>
+          <tr><td class="k">数据覆盖</td><td class="ca">6 个变量全画，其中 4 个为读图近似</td><td class="cb">只画 2 个正文有精确值的变量</td><td><span class="lab cap">能力问题</span></td></tr>
+          <tr><td class="k">缺失数据处理</td><td class="ca">页脚一句「近似读数」</td><td class="cb">单开一节列 8 项「论文未给出」</td><td><span class="lab cap">能力问题</span></td></tr>
+          <tr><td class="k">原文校勘</td><td class="ca">未提及任何矛盾</td><td class="cb">指出 1° vs 0.8° 冲突、14 females 笔误</td><td><span class="lab cap">能力问题</span></td></tr>
+          <tr><td class="k">误差棒实现</td><td class="ca">custom renderItem 手绘三段线（含横帽）</td><td class="cb">markLine 两点连线（无横帽）</td><td><span class="lab trade">产品取舍</span></td></tr>
+          <tr><td class="k">导出方式</td><td class="ca">顶部常驻条，一键全部 + 单图，3× 白底</td><td class="cb">每图独立按钮，导出后回显「✓ 已导出」</td><td><span class="lab trade">产品取舍</span></td></tr>
+          <tr><td class="k">响应式断点</td><td class="ca">0 个，图高写死 560px</td><td class="cb">1100px / 520px 两档，图高降到 300 / 280</td><td><span class="lab trade">产品取舍</span></td></tr>
+          <tr><td class="k">重绘时机</td><td class="ca">仅监听 window.resize</td><td class="cb">ResizeObserver + resize + orientationchange</td><td><span class="lab trade">产品取舍</span></td></tr>
+          <tr><td class="k">tooltip 分组</td><td class="ca"><b>除数写 <code>+3</code>，实际应 <code>+4</code></b>，第 4 组末点失效</td><td class="cb">每格 1 条 series，seriesIndex 天然对齐</td><td><span class="lab cap">能力问题</span></td></tr>
+          <tr><td class="k">单图容错</td><td class="ca">无 try/catch，一图抛错整段中断</td><td class="cb"><code>safe()</code> 逐图隔离并回显错误</td><td><span class="lab cap">能力问题</span></td></tr>
+          <tr><td class="k">无障碍</td><td class="ca">0 处 aria</td><td class="cb">0 处 aria</td><td><span class="lab same">无差异</span></td></tr>
+          <tr><td class="k">打印 / 动效降级</td><td class="ca">均无</td><td class="cb">均无</td><td><span class="lab same">无差异</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shead">
+      <span class="snum">05</span>
+      <div>
+        <h2>评析</h2>
+        <p class="ssub">同一条提示词，两个工具的分岔点在哪里。</p>
+      </div>
+    </div>
+
+    <div class="verdict">
+      <div class="vd">
+        <h3>一、16 维里 6 项能力问题、6 项产品取舍、4 项完全一致</h3>
+        <p>一致的那 4 项很说明问题：<b>同一代模型在"把图用 ECharts 画出来"这件事上已经拉平了</b>——都是 4 张 canvas、都是 1 个 CDN、都没有 aria、都没有打印样式。基础产能不再是区分点。</p>
+        <p>真正拉开差距的 6 项能力问题里，有 4 项指向同一件事：<em>对"数据从哪来"的态度</em>。A 版倾向于把空白填满，B 版倾向于把空白标出来。这不是提示词能拧过来的——提示词只说了"读图近似的部分要注明"，A 版照做了一句脚注，B 版把它扩成了一章。</p>
+      </div>
+
+      <div class="vd">
+        <h3>二、"看起来更完整"的那一版，证据链反而更短</h3>
+        <p>A 版画了 6 个变量、24 个散点、6 根条形，视觉信息密度是 B 版的两倍多。但 6 个变量里只有 2 个在正文里有精确数值，其余 4 个是读图估算——<em>证据覆盖率 33%，呈现完整度 100%</em>。</p>
+        <p>B 版只画 2 个，看起来"少"，但那 2 个的数据来源可以逐字落到 Results 的句子上，另外 4 个明确标注"论文未给出"。在学术场景里，<b>能追溯到出处的 2 个，价值高于看起来齐整的 6 个</b>。</p>
+        <p>这也解释了一个常见误判：把"信息多"等同于"做得好"。这次对比里，信息量最大的那一版恰恰是最容易误导读者的那一版。</p>
+      </div>
+
+      <div class="vd">
+        <h3>三、那个 <code>+3 / +4</code> 的错位，是最典型的"能力问题"样本</h3>
+        <p>它同时满足三个条件：不影响页面打开、不影响截图好看、不影响第一眼打分。只有真的把鼠标移到第四组最后一个散点上，才会发现 tooltip 是一片空白。</p>
+        <p>对照 B 版的处理：它没有算除数，因为它压根不需要——每个 grid 只放 1 条 series，<code>seriesIndex</code> 就等于组号，索引天然对齐。<em>同一个需求，一个选了需要算术反推的建模，一个选了不需要反推的建模。</em>前者把"会不会算错"变成了一个需要验证的环节，后者让这个环节直接不存在。</p>
+        <p>能力问题的破坏力从来不跟数量成正比，它跟"有没有人验证过"成正比。</p>
+      </div>
+
+      <div class="win">
+        <div class="wa">
+          <h4>更适合用 A 版（TraceCode）的场景</h4>
+          <ul>
+            <li>目标是快速拿到几张能贴进报告的图</li>
+            <li>需要短平快、代码量小、好改好调</li>
+            <li>在线环境，不担心 CDN 可用性</li>
+            <li>不想被三栏布局和一堆章节分散注意力</li>
+          </ul>
+        </div>
+        <div class="wb">
+          <h4>更适合用 B 版（DeepSeek）的场景</h4>
+          <ul>
+            <li>交付物要直接给人读，甚至打印或存档</li>
+            <li>读者会追问"这个数是哪来的"</li>
+            <li>数据本身存在缺口，需要把边界讲清楚</li>
+            <li>要在窄屏或移动端上看</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding:0;background:none;border:none;box-shadow:none;backdrop-filter:none">
+    <div class="reflect">
+      <h2>06 · 我的感悟</h2>
+      <p>
+        做完这次对比，我最深的感受不是"哪个工具更强"，而是<b>我原来一直在用"看起来完整"来验收作业</b>。
+        A 版一打开——六个变量、二十四个点、六根条形、红色风险区、误差棒，一眼看上去就是"做完了"。
+        B 版打开只有两个柱子，四联图里一半位置是空的，第一反应甚至是"这个没做完吧"。
+      </p>
+      <p>
+        直到我逐条去对正文，才发现反过来了：A 版那六个变量里，<span class="k2">只有两个能在原文找到精确数字</span>，
+        另外四个是它自己从图上读出来的。而它把这些估算值和精确值画得一模一样——同样的圆点、同样的图例、同样的字号。
+        读者不可能分辨。这个过程里我意识到一件事：<b>AI 填空白的时候，不会在视觉上提醒你"这里是猜的"。</b>
+      </p>
+      <p>
+        第二个让我停住的地方，是那处 <b>1° 还是 0.8°</b>。同一篇论文，Results 说增加了 1°，Discussion 说增加了 0.8°，
+        而均值对 48.8 → 49.6 算出来是 0.8。B 版把这件事写进了表注；A 版照抄了 0.8，数字是对的，但它不知道自己对。
+        这让我第一次意识到，<span class="k3">"校对"这件事也可以交给工具做</span>——我以前从没在提示词里写过"如果原文前后矛盾，请指出来"。
+      </p>
+      <p>
+        那个 <code>+3</code> 写成 <code>+4</code> 的 bug 我盯了很久。它不报错、不崩溃、截图也看不出来，
+        只有真的把鼠标移到第四组最后一个点上，才会发现是空的。
+        这说明<span class="k2">模型交付的是"逻辑正确"的代码，不是"行为正确"的页面</span>。
+        而更值得注意的是 B 版的做法：它根本没有"算除数"这一步，因为每个格子只放一条 series。
+        <b>有些 bug 不是靠更仔细避免的，是靠换一种建模让它在结构上不可能发生。</b>
+      </p>
+      <p>所以我现在改了两个习惯：</p>
+      <ol>
+        <li><b>提示词里加一条强制留白条款</b>——"正文没有给出的数值，一律标注'论文未给出'，不要估算、不要插值"。
+          之前我写的是"近似的要注明"，结果它只注明了一句脚注。</li>
+        <li><b>交付前先点开每个交互点</b>——尤其是我自己看不懂逻辑的那种。tooltip、hover、点击切换，
+          挨个试一遍比重新生成一版便宜得多。</li>
+      </ol>
+      <p>
+        至于工具，我的结论是：<b>要图，用 TraceCode；要一份经得起追问的东西，用 DeepSeek</b>。
+        但更重要的结论是下面这句——
+        <span class="k2">这次的差距不在模型，而在我那条提示词里少了一句边界约定。</span>
+        A 版之所以敢填满六个变量，是因为我只说了"读图近似的要注明"，没说"近似的最好别画"。
+        <b>产品取舍的源头，其实在需求描述里。</b>
+      </p>
+    </div>
+  </section>
+
+  <div class="foot">
+    第十次课 · 课堂作业 · 2026 AI 课程作品集<br>
+    对比产物：<a href="tracecode-ACL疲劳着陆生物力学可视化.html" target="_blank">A 版 · TraceCode</a> ／
+    <a href="deep%20seekharmnessACL_landing_biomech.html" target="_blank">B 版 · DeepSeek</a><br>
+    结论均基于两版源码逐行核对（含 tooltip 索引、series 结构、断点数量、aria 计数、CDN 兜底逻辑），非主观印象
+  </div>
+
+</main>
+</body>
+</html>
